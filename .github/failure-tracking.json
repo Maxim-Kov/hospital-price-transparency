@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Configuration for the automated failure detection and remediation system",
+
+  "config": {
+    "rate_limits": {
+      "max_issues_per_run": 10,
+      "max_prs_per_day": 5,
+      "min_confidence_for_autofix": 0.7,
+      "cooldown_hours_after_failure": 24
+    },
+    "categories": {
+      "url-update": {
+        "auto_fixable": true,
+        "priority": 1,
+        "description": "URL changed, new URL available"
+      },
+      "registry-update": {
+        "auto_fixable": true,
+        "priority": 2,
+        "description": "No scraper registered for URL pattern"
+      },
+      "parser-fix": {
+        "auto_fixable": true,
+        "priority": 3,
+        "description": "Parser needs update for format changes"
+      },
+      "encoding-fix": {
+        "auto_fixable": true,
+        "priority": 4,
+        "description": "Character encoding issues"
+      },
+      "scraper-fix": {
+        "auto_fixable": true,
+        "priority": 5,
+        "description": "Scraper logic needs adjustment"
+      },
+      "url-blocked": {
+        "auto_fixable": false,
+        "priority": 6,
+        "description": "Access blocked (403)"
+      },
+      "needs-human": {
+        "auto_fixable": false,
+        "priority": 7,
+        "description": "Complex issue requiring manual investigation"
+      }
+    },
+    "labels": {
+      "detection": ["scrape-failure"],
+      "type": ["type:url-change", "type:blocked", "type:no-scraper", "type:parser-error", "type:encoding", "type:scraper-error"],
+      "trigger": ["url-update", "registry-update", "parser-fix", "encoding-fix", "scraper-fix"],
+      "fix": ["auto-generated", "scrape-fix"],
+      "manual": ["needs-human"]
+    },
+    "allowed_paths": [
+      "dim/urls/*.json",
+      "src/scrapers/registry.py",
+      "src/scrapers/cms_*_scraper.py",
+      "src/scrapers/base.py",
+      "src/normalizers/*.py"
+    ]
+  },
+
+  "state": {
+    "$comment": "This section is updated by CI workflows",
+    "last_detection_run": null,
+    "last_analysis_run": null,
+    "fix_history": [],
+    "known_issues": {}
+  },
+
+  "metrics": {
+    "$comment": "Aggregated metrics for monitoring",
+    "total_fixes_attempted": 0,
+    "total_fixes_succeeded": 0,
+    "total_fixes_failed": 0,
+    "fixes_by_category": {
+      "url-update": 0,
+      "registry-update": 0,
+      "encoding-fix": 0
+    },
+    "fixes_by_method": {
+      "easy": 0,
+      "hybrid": 0,
+      "claude": 0
+    }
+  }
+}

@@ -5,7 +5,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Automated scraper for hospital price transparency data, collecting standardized pricing information from hospitals across (eventually) 50 US states.
+Self-healing scraper for hospital price transparency data. Collects and archives standardized pricing information from 5,000+ hospitals across all 50 US states.
 
 ## The Problem: Disappearing Data
 
@@ -48,11 +48,23 @@ git diff abc123..def456 data/VT/470011.jsonl
 git checkout $(git rev-list -n 1 --before="2025-06-01" HEAD) -- data/VT/470011.jsonl
 ```
 
+## Self-Healing Infrastructure
+
+Traditional scrapers break when hospitals change their file formats or URLs. This project uses Claude to automatically detect and repair failures:
+
+1. **Detect**: Daily validation runs identify broken URLs and parsing failures
+2. **Diagnose**: Failures are grouped by error pattern and root cause
+3. **Fix**: Claude analyzes the failure, finds the new URL or adapts the parser
+4. **Validate**: Changes are tested before merging
+5. **Deploy**: Fixes are automatically applied via pull request
+
+This transforms an impossible maintenance burden into sustainable infrastructure.
+
 ## Overview
 
 The Centers for Medicare and Medicaid Services requires hospitals under [45 CFR §180.50](https://www.federalregister.gov/d/2019-24931/p-1010) to publish [machine-readable price lists](https://www.cms.gov/hospital-price-transparency). This project automates the collection and normalization of this data for research purposes.
 
-**Current Coverage:** 20 states with hospital URLs sourced from [hospitalpricingfiles.org](https://hospitalpricingfiles.org)
+**Current Coverage:** All 50 states, 5,000+ hospitals
 
 ## Quick Start
 
@@ -158,9 +170,12 @@ The scraper itself can be run manually or on your own schedule to capture full p
 
 | Region | States |
 |--------|--------|
-| Northeast | CT, MA, NH, NJ, NY, PA, RI, VT |
-| Southeast | AL, DE, FL, GA, KY, MD, NC, SC, TN, VA, WV |
-| Southwest | TX |
+| Northeast | CT, MA, ME, NH, NJ, NY, PA, RI, VT |
+| Southeast | AL, DE, FL, GA, KY, MD, MS, NC, SC, TN, VA, WV |
+| Midwest | IA, IL, IN, KS, MI, MN, MO, ND, NE, OH, SD, WI |
+| Southwest | AZ, NM, OK, TX |
+| West | AK, CA, CO, HI, ID, MT, NV, OR, UT, WA, WY |
+| **Total** | **50 states, 5,000+ hospitals** |
 
 ## Development
 

@@ -1,0 +1,75 @@
+name: Detect Scrape Failures
+
+on:
+  workflow_run:
+    workflows: ["Validate Hospital URLs"]
+    types:
+      - completed
+
+  workflow_dispatch:
+    inputs:
+      max_issues:
+        description: 'Maximum number of issues to create'
+        required: false
+        default: '10'
+      auto_fixable_only:
+        description: 'Only create issues for auto-fixable failures'
+        required: false
+        default: 'true'
+        type: boolean
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  detect-failures:
+    runs-on: ubuntu-latest
+    # Run on schedule completion or manual trigger
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Analyze failures
+        id: analyze
+        run: |
+          uv run python scripts/ci/analyze_failures.py \
+            --status-dir status \
+            --output /tmp/failures.json \
+            --summary
+
+          # Export summary stats for later steps
+          TOTAL=$(uv run python -c "import json; print(json.load(open('/tmp/failures.json'))['total_failures'])")
+          GROUPS=$(uv run python -c "import json; print(json.load(open('/tmp/failures.json'))['total_groups'])")
+          echo "total_failures=$TOTAL" >> $GITHUB_OUTPUT
+          echo "total_groups=$GROUPS" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub issues
+        if: steps.analyze.outputs.total_failures > 0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          MAX_ISSUES="${{ github.event.inputs.max_issues || '10' }}"
+          AUTO_FIXABLE="${{ github.event.inputs.auto_fixable_only || 'true' }}"
+
+          ARGS="--input /tmp/failures.json --max-issues $MAX_ISSUES"
+
+          if [ "$AUTO_FIXABLE" = "true" ]; then
+            ARGS="$ARGS --auto-fixable-only"
+          fi
+
+          uv run python scripts/ci/create_failure_issues.py $ARGS
+
+      - name: Summary
+        run: |
+          echo "## Failure Detection Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total Failure Groups:** ${{ steps.analyze.outputs.total_groups }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total Individual Failures:** ${{ steps.analyze.outputs.total_failures }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "See created issues for details." >> $GITHUB_STEP_SUMMARY
