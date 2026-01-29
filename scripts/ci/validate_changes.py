@@ -20,6 +20,9 @@ from pathlib import Path
 ALLOWED_PATHS = [
     r"^dim/urls/[a-z]{2}\.json$",
     r"^src/scrapers/registry\.py$",
+    r"^src/scrapers/cms_.*_scraper\.py$",  # CMS format scrapers
+    r"^src/scrapers/base\.py$",  # Base scraper class
+    r"^src/normalizers/.*\.py$",  # Normalizers
 ]
 
 # Forbidden patterns in file content
@@ -153,7 +156,8 @@ def validate_manifest(manifest: dict) -> list[str]:
             errors.append(f"Manifest missing required field: {field}")
 
     fix_type = manifest.get("fix_type", "")
-    if fix_type not in ("url-update", "registry-update", "encoding-fix"):
+    valid_fix_types = ("url-update", "registry-update", "encoding-fix", "parser-fix", "scraper-fix")
+    if fix_type not in valid_fix_types:
         errors.append(f"Invalid fix_type: {fix_type}")
 
     for file_entry in manifest.get("files", []):

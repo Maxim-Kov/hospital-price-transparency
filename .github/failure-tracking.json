@@ -20,30 +20,45 @@
         "priority": 2,
         "description": "No scraper registered for URL pattern"
       },
-      "encoding-fix": {
+      "parser-fix": {
         "auto_fixable": true,
         "priority": 3,
+        "description": "Parser needs update for format changes"
+      },
+      "encoding-fix": {
+        "auto_fixable": true,
+        "priority": 4,
         "description": "Character encoding issues"
+      },
+      "scraper-fix": {
+        "auto_fixable": true,
+        "priority": 5,
+        "description": "Scraper logic needs adjustment"
       },
       "url-blocked": {
         "auto_fixable": false,
-        "priority": 4,
+        "priority": 6,
         "description": "Access blocked (403)"
       },
       "needs-human": {
         "auto_fixable": false,
-        "priority": 5,
+        "priority": 7,
         "description": "Complex issue requiring manual investigation"
       }
     },
     "labels": {
-      "detection": ["scrape-failure", "ai-triage"],
-      "analysis": ["url-update", "registry-update", "encoding-fix", "url-blocked", "needs-human"],
-      "fix": ["auto-fix-ready", "auto-generated", "scrape-fix"]
+      "detection": ["scrape-failure"],
+      "type": ["type:url-change", "type:blocked", "type:no-scraper", "type:parser-error", "type:encoding", "type:scraper-error"],
+      "trigger": ["url-update", "registry-update", "parser-fix", "encoding-fix", "scraper-fix"],
+      "fix": ["auto-generated", "scrape-fix"],
+      "manual": ["needs-human"]
     },
     "allowed_paths": [
       "dim/urls/*.json",
-      "src/scrapers/registry.py"
+      "src/scrapers/registry.py",
+      "src/scrapers/cms_*_scraper.py",
+      "src/scrapers/base.py",
+      "src/normalizers/*.py"
     ]
   },
 

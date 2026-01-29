@@ -62,7 +62,9 @@ jobs:
       (
         github.event.label.name == 'url-update' ||
         github.event.label.name == 'registry-update' ||
-        github.event.label.name == 'auto-fix-ready' ||
+        github.event.label.name == 'parser-fix' ||
+        github.event.label.name == 'encoding-fix' ||
+        github.event.label.name == 'scraper-fix' ||
         github.event_name == 'workflow_dispatch'
       )
     runs-on: ubuntu-latest
@@ -301,7 +303,7 @@ jobs:
         if: steps.existing.outputs.exists != 'true'
         id: commit
         run: |
-          git add dim/urls/*.json src/scrapers/registry.py 2>/dev/null || true
+          git add dim/urls/*.json src/scrapers/*.py src/normalizers/*.py 2>/dev/null || true
 
           # Check if there are changes to commit
           if git diff --cached --quiet; then
