@@ -1,0 +1,468 @@
+name: Claude Auto-Fix
+
+on:
+  issues:
+    types:
+      - labeled
+
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to fix'
+        required: true
+        type: number
+      skip_validation:
+        description: 'Skip dry-run validation'
+        required: false
+        default: false
+        type: boolean
+      skip_easy_fix:
+        description: 'Skip easy fix attempt (go straight to Claude)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  check-rate-limit:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check daily PR limit
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Count PRs created by this workflow today
+          TODAY=$(date -u +%Y-%m-%d)
+          PR_COUNT=$(gh pr list --author "github-actions[bot]" --search "created:>=$TODAY" --json number --jq 'length')
+
+          echo "PRs created today: $PR_COUNT"
+
+          if [ "$PR_COUNT" -ge 5 ]; then
+            echo "Daily PR limit (5) reached"
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          fi
+
+  auto-fix:
+    needs: check-rate-limit
+    if: |
+      needs.check-rate-limit.outputs.should_run == 'true' &&
+      (
+        github.event.label.name == 'url-update' ||
+        github.event.label.name == 'registry-update' ||
+        github.event.label.name == 'auto-fix-ready' ||
+        github.event_name == 'workflow_dispatch'
+      )
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Get issue number
+        id: issue
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "number=${{ github.event.inputs.issue_number }}" >> $GITHUB_OUTPUT
+          else
+            echo "number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get issue details
+        id: details
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TITLE=$(gh issue view ${{ steps.issue.outputs.number }} --json title --jq '.title')
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
+
+          # Extract group_id from title (format: [group_id] category: count failures at domain)
+          GROUP_ID=$(echo "$TITLE" | sed -n 's/^\[\([^]]*\)\].*/\1/p')
+          echo "group_id=$GROUP_ID" >> $GITHUB_OUTPUT
+
+          # Create branch name from group_id
+          BRANCH="auto-fix/${GROUP_ID}"
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+          # Get issue body and extract state code if present
+          BODY=$(gh issue view ${{ steps.issue.outputs.number }} --json body --jq '.body')
+          echo "$BODY" > /tmp/issue_body.txt
+
+          # Try to extract state from issue (look for patterns like "State: NC" or state codes in CCNs)
+          STATE=$(echo "$BODY" | grep -oP '(?<=State:\s*)[A-Z]{2}' | head -1 || true)
+          if [ -z "$STATE" ]; then
+            # Try to infer from CCN patterns (first 2 digits map to states)
+            STATE=$(echo "$BODY" | grep -oP '\b\d{6}\b' | head -1 | cut -c1-2 || true)
+          fi
+          echo "state=$STATE" >> $GITHUB_OUTPUT
+
+          # Check if this is a url-update type issue
+          LABELS=$(gh issue view ${{ steps.issue.outputs.number }} --json labels --jq '.labels[].name' | tr '\n' ',')
+          echo "labels=$LABELS" >> $GITHUB_OUTPUT
+
+          if echo "$LABELS" | grep -q "url-update"; then
+            echo "is_url_update=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_url_update=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for existing PR
+        id: existing
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING=$(gh pr list --head "${{ steps.details.outputs.branch }}" --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            echo "PR #$EXISTING already exists for this branch"
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "pr_number=$EXISTING" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create fix branch
+        if: steps.existing.outputs.exists != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "${{ steps.details.outputs.branch }}"
+
+      # ============================================================
+      # PHASE 1: Try easy fix with fix_broken_urls.py
+      # ============================================================
+      - name: Attempt easy fix (fix_broken_urls.py)
+        id: easy_fix
+        if: |
+          steps.existing.outputs.exists != 'true' &&
+          steps.details.outputs.is_url_update == 'true' &&
+          github.event.inputs.skip_easy_fix != 'true'
+        run: |
+          echo "Attempting easy fix with fix_broken_urls.py..."
+
+          # Build state filter if we know the state
+          STATE_ARG=""
+          if [ -n "${{ steps.details.outputs.state }}" ]; then
+            STATE_ARG="--state ${{ steps.details.outputs.state }}"
+          fi
+
+          # Run the fix script with JSON output
+          uv run python scripts/fix_broken_urls.py \
+            --error-codes 403,404 \
+            --json \
+            $STATE_ARG > /tmp/easy_fix_result.json 2>&1 || true
+
+          # Parse results
+          if [ -f /tmp/easy_fix_result.json ]; then
+            FIXED_COUNT=$(jq '.fixed | length' /tmp/easy_fix_result.json 2>/dev/null || echo "0")
+            FAILED_COUNT=$(jq '.failed | length' /tmp/easy_fix_result.json 2>/dev/null || echo "0")
+            TOTAL_COUNT=$(jq '.total' /tmp/easy_fix_result.json 2>/dev/null || echo "0")
+          else
+            FIXED_COUNT=0
+            FAILED_COUNT=0
+            TOTAL_COUNT=0
+          fi
+
+          echo "Easy fix results: $FIXED_COUNT fixed, $FAILED_COUNT failed, $TOTAL_COUNT total"
+          echo "fixed_count=$FIXED_COUNT" >> $GITHUB_OUTPUT
+          echo "failed_count=$FAILED_COUNT" >> $GITHUB_OUTPUT
+          echo "total_count=$TOTAL_COUNT" >> $GITHUB_OUTPUT
+
+          # Determine if we need Claude
+          if [ "$FIXED_COUNT" -gt 0 ] && [ "$FAILED_COUNT" -eq 0 ]; then
+            echo "All issues fixed by easy fix!"
+            echo "needs_claude=false" >> $GITHUB_OUTPUT
+            echo "fix_method=easy" >> $GITHUB_OUTPUT
+          elif [ "$FIXED_COUNT" -gt 0 ]; then
+            echo "Partial fix - some issues remain for Claude"
+            echo "needs_claude=true" >> $GITHUB_OUTPUT
+            echo "fix_method=hybrid" >> $GITHUB_OUTPUT
+          else
+            echo "Easy fix couldn't resolve any issues - falling back to Claude"
+            echo "needs_claude=true" >> $GITHUB_OUTPUT
+            echo "fix_method=claude" >> $GITHUB_OUTPUT
+          fi
+
+          # Generate summary of what was fixed for PR description
+          if [ "$FIXED_COUNT" -gt 0 ]; then
+            jq -r '.fixed[] | "- ✅ \(.hospital_name) (\(.ccn)): URL updated"' /tmp/easy_fix_result.json > /tmp/easy_fix_summary.txt
+          fi
+
+          if [ "$FAILED_COUNT" -gt 0 ]; then
+            jq -r '.failed[] | "- ❌ \(.hospital_name) (\(.ccn)): \(.error // .status)"' /tmp/easy_fix_result.json >> /tmp/easy_fix_summary.txt 2>/dev/null || true
+          fi
+
+      # ============================================================
+      # PHASE 2: Fall back to Claude for remaining issues
+      # ============================================================
+      - name: Install Claude Code
+        if: |
+          steps.existing.outputs.exists != 'true' &&
+          (steps.easy_fix.outputs.needs_claude == 'true' || steps.details.outputs.is_url_update != 'true' || github.event.inputs.skip_easy_fix == 'true')
+        run: |
+          npm install -g @anthropic-ai/claude-code
+
+      - name: Generate fix with Claude
+        id: claude_fix
+        if: |
+          steps.existing.outputs.exists != 'true' &&
+          (steps.easy_fix.outputs.needs_claude == 'true' || steps.details.outputs.is_url_update != 'true' || github.event.inputs.skip_easy_fix == 'true')
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Invoking Claude for fix generation..."
+
+          # Get issue body for context
+          gh issue view ${{ steps.issue.outputs.number }} --json body > /tmp/issue.json
+
+          # Build context about what easy fix already tried
+          EASY_FIX_CONTEXT=""
+          if [ -f /tmp/easy_fix_result.json ]; then
+            FIXED_COUNT=$(jq '.fixed | length' /tmp/easy_fix_result.json 2>/dev/null || echo "0")
+            FAILED_COUNT=$(jq '.failed | length' /tmp/easy_fix_result.json 2>/dev/null || echo "0")
+
+            if [ "$FIXED_COUNT" -gt 0 ] || [ "$FAILED_COUNT" -gt 0 ]; then
+              EASY_FIX_CONTEXT="
+          ## Previous Automated Attempt
+
+          The \`fix_broken_urls.py\` script was run first with these results:
+          - Fixed: $FIXED_COUNT URLs
+          - Failed: $FAILED_COUNT URLs
+
+          Failed entries that need your attention:
+          $(jq -r '.failed[] | "- \(.hospital_name) (\(.ccn)): \(.error // .status) - transparency page: \(.transparency_page)"' /tmp/easy_fix_result.json 2>/dev/null || echo "None")
+
+          Please focus on fixing the remaining failures. The script couldn't find valid URLs on the transparency pages for these hospitals.
+          You may need to:
+          1. Try alternative URL patterns
+          2. Check if the hospital changed their transparency page structure
+          3. Mark as needs-human if no machine-readable file can be found
+          "
+            fi
+          fi
+
+          # Create prompt with context
+          cat > /tmp/fix_prompt.md << PROMPT_EOF
+          $(cat scripts/ci/prompts/generate_fix.md)
+
+          ## Issue Context
+
+          $(cat /tmp/issue.json | jq -r '.body')
+          $EASY_FIX_CONTEXT
+
+          ---
+
+          Please generate the fix following the output format specified above.
+          After generating the fix, apply it by modifying the appropriate files.
+          PROMPT_EOF
+
+          # Run Claude Code to generate and apply the fix
+          claude --dangerously-skip-permissions -p "$(cat /tmp/fix_prompt.md)"
+
+          echo "claude_ran=true" >> $GITHUB_OUTPUT
+
+      - name: Validate changes
+        if: steps.existing.outputs.exists != 'true'
+        run: |
+          # Check if there are any changes to validate
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No changes to validate"
+            exit 0
+          fi
+
+          SKIP_SCRAPE=""
+          if [ "${{ github.event.inputs.skip_validation }}" = "true" ]; then
+            SKIP_SCRAPE="--skip-scrape"
+          fi
+
+          uv run python scripts/ci/validate_changes.py $SKIP_SCRAPE
+
+      - name: Commit and push
+        if: steps.existing.outputs.exists != 'true'
+        id: commit
+        run: |
+          git add dim/urls/*.json src/scrapers/registry.py 2>/dev/null || true
+
+          # Check if there are changes to commit
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Get CCNs from the diff for commit message
+          CCNS=$(git diff --cached --name-only | xargs -I {} grep -l '"ccn"' {} 2>/dev/null | head -1 | xargs cat 2>/dev/null | jq -r '.[].ccn' 2>/dev/null | head -3 | tr '\n' ', ' | sed 's/,$//' || echo "unknown")
+
+          # Determine fix method for commit message
+          FIX_METHOD="${{ steps.easy_fix.outputs.fix_method }}"
+          if [ -z "$FIX_METHOD" ]; then
+            FIX_METHOD="claude"
+          fi
+
+          case "$FIX_METHOD" in
+            easy)
+              CO_AUTHOR=""
+              METHOD_NOTE="Fixed automatically by fix_broken_urls.py"
+              ;;
+            hybrid)
+              CO_AUTHOR="Co-Authored-By: Claude <noreply@anthropic.com>"
+              METHOD_NOTE="Fixed by fix_broken_urls.py + Claude (hybrid)"
+              ;;
+            *)
+              CO_AUTHOR="Co-Authored-By: Claude <noreply@anthropic.com>"
+              METHOD_NOTE="Fixed by Claude"
+              ;;
+          esac
+
+          git commit -m "fix: Auto-fix for issue #${{ steps.issue.outputs.number }}
+
+          Fixes scrape failures for: $CCNS
+
+          $METHOD_NOTE
+
+          Closes #${{ steps.issue.outputs.number }}
+
+          $CO_AUTHOR"
+
+          git push -u origin "${{ steps.details.outputs.branch }}"
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+          echo "fix_method=$FIX_METHOD" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        if: steps.existing.outputs.exists != 'true' && steps.commit.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Build the fix method badge
+          FIX_METHOD="${{ steps.commit.outputs.fix_method }}"
+          case "$FIX_METHOD" in
+            easy)
+              METHOD_BADGE="🤖 **Fix Method:** Automated (fix_broken_urls.py)"
+              ;;
+            hybrid)
+              METHOD_BADGE="🔀 **Fix Method:** Hybrid (fix_broken_urls.py + Claude)"
+              ;;
+            *)
+              METHOD_BADGE="🧠 **Fix Method:** Claude AI"
+              ;;
+          esac
+
+          # Include easy fix summary if available
+          EASY_FIX_SUMMARY=""
+          if [ -f /tmp/easy_fix_summary.txt ]; then
+            EASY_FIX_SUMMARY="
+          ### Automated Fix Results
+
+          $(cat /tmp/easy_fix_summary.txt)
+          "
+          fi
+
+          gh pr create \
+            --title "fix: Auto-fix for ${{ steps.details.outputs.group_id }}" \
+            --body "## Auto-Generated Fix
+
+          This PR was automatically generated to fix scrape failures.
+
+          **Related Issue:** #${{ steps.issue.outputs.number }}
+          **Failure Group:** \`${{ steps.details.outputs.group_id }}\`
+          $METHOD_BADGE
+          $EASY_FIX_SUMMARY
+          ### Changes
+
+          See the diff for details on URL or registry updates.
+
+          ### Validation
+
+          - [x] File paths are in allowed list
+          - [x] No forbidden patterns detected
+          - [x] JSON/Python syntax valid
+          - [ ] Dry-run scrape passed (check workflow logs)
+
+          ### Review Checklist
+
+          - [ ] URLs are correct and accessible
+          - [ ] Changes match the issue description
+          - [ ] No unintended modifications
+
+          ---
+          *This PR was auto-generated. Human review is required before merging.*" \
+            --label "auto-generated" \
+            --label "scrape-fix"
+
+      - name: Comment on issue
+        if: steps.commit.outputs.has_changes == 'true' || steps.existing.outputs.exists == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ steps.existing.outputs.exists }}" = "true" ]; then
+            gh issue comment ${{ steps.issue.outputs.number }} \
+              --body "A PR already exists for this fix: #${{ steps.existing.outputs.pr_number }}"
+          else
+            PR_URL=$(gh pr view "${{ steps.details.outputs.branch }}" --json url --jq '.url')
+
+            FIX_METHOD="${{ steps.commit.outputs.fix_method }}"
+            case "$FIX_METHOD" in
+              easy)
+                METHOD_MSG="🤖 Fixed automatically using \`fix_broken_urls.py\`"
+                ;;
+              hybrid)
+                METHOD_MSG="🔀 Fixed using hybrid approach (automated script + Claude)"
+                ;;
+              *)
+                METHOD_MSG="🧠 Fixed using Claude AI"
+                ;;
+            esac
+
+            gh issue comment ${{ steps.issue.outputs.number }} \
+              --body "Auto-fix PR created: $PR_URL
+
+          $METHOD_MSG
+
+          Please review the changes and merge if correct."
+          fi
+
+      - name: Summary
+        run: |
+          echo "## Auto-Fix Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Issue:** #${{ steps.issue.outputs.number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ steps.details.outputs.branch }}" >> $GITHUB_STEP_SUMMARY
+
+          # Easy fix stats
+          if [ -n "${{ steps.easy_fix.outputs.fixed_count }}" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Easy Fix (fix_broken_urls.py)" >> $GITHUB_STEP_SUMMARY
+            echo "- Fixed: ${{ steps.easy_fix.outputs.fixed_count }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Failed: ${{ steps.easy_fix.outputs.failed_count }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Needed Claude: ${{ steps.easy_fix.outputs.needs_claude }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.existing.outputs.exists }}" = "true" ]; then
+            echo "- **Status:** Existing PR found (#${{ steps.existing.outputs.pr_number }})" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.commit.outputs.has_changes }}" = "true" ]; then
+            echo "- **Status:** PR created" >> $GITHUB_STEP_SUMMARY
+            echo "- **Fix Method:** ${{ steps.commit.outputs.fix_method }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Status:** No changes generated" >> $GITHUB_STEP_SUMMARY
+          fi

@@ -15,9 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        state: [AL, CT, DE, FL, GA, KY, MA, MD, NC, NH, NJ, NY, PA, RI, SC, TN, TX, VA, VT, WV]
+        state: [AK, AL, AR, AZ, CA, CO, CT, DE, FL, GA, HI, IA, ID, IL, IN, KS, KY, LA, MA, MD, ME, MI, MN, MO, MS, MT, NC, ND, NE, NH, NJ, NM, NV, NY, OH, OK, OR, PA, RI, SC, SD, TN, TX, UT, VA, VT, WA, WI, WV, WY]
       fail-fast: false
-      max-parallel: 5
+      max-parallel: 10
 
     # Skip matrix jobs if a specific state was requested
     if: ${{ github.event.inputs.state == 'all' || github.event.inputs.state == '' || github.event.inputs.state == matrix.state }}
