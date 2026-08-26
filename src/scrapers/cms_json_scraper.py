@@ -63,6 +63,7 @@ class CMSStandardJSONScraper(BaseScraper):
     CODE_TYPE_FIELDS = ["type", "code_type", "billing_code_type", "code_system"]
 
     # Field name variations for gross charges
+    # Note: do NOT include minimum/maximum — those are de-identified negotiated ranges
     GROSS_FIELDS = [
         "gross_charge",
         "gross",
@@ -71,7 +72,6 @@ class CMSStandardJSONScraper(BaseScraper):
         "charge",
         "list_price",
         "chargemaster_price",
-        "maximum",
     ]
 
     # Field name variations for cash/discounted prices
@@ -82,9 +82,27 @@ class CMSStandardJSONScraper(BaseScraper):
         "cash_price",
         "self_pay",
         "self_pay_price",
-        "minimum",
         "cash_discount",
     ]
+
+    # Field name variations for negotiated dollar amounts
+    NET_DOLLAR_FIELDS = [
+        "standard_charge_dollar",
+        "negotiated_dollar",
+        "negotiated_rate",
+        "negotiated_amount",
+        "allowed_amount",
+    ]
+
+    # Field name variations for estimated amounts (fallback when no dollar)
+    ESTIMATED_AMOUNT_FIELDS = [
+        "estimated_amount",
+        "estimated_allowed_amount",
+    ]
+
+    # Field name variations for payer / plan inside payers_information
+    PAYER_NAME_FIELDS = ["payer_name", "payer", "payer_name_id"]
+    PLAN_NAME_FIELDS = ["plan_name", "plan", "plan_name_id"]
 
     # Valid CPT/HCPCS code type identifiers
     VALID_CODE_TYPES = {"CPT", "CPT4", "HCPCS", "CPT-4", "HCPC"}
@@ -210,6 +228,21 @@ class CMSStandardJSONScraper(BaseScraper):
 
         return codes
 
+    def _parse_dollar(self, value: Any) -> float | None:
+        """Parse a dollar amount, rejecting sentinels and non-numeric values."""
+        if value is None:
+            return None
+        try:
+            amount = float(str(value).replace(",", "").replace("$", "").strip())
+        except (ValueError, TypeError):
+            return None
+        # Sentinel used by some hospitals when amount is unknown
+        if amount >= 9999999:
+            return None
+        if amount <= 0:
+            return None
+        return amount
+
     def _extract_prices(self, item: dict) -> tuple[float | None, float | None]:
         """Extract gross and cash prices from a charge item.
 
@@ -262,6 +295,134 @@ class CMSStandardJSONScraper(BaseScraper):
 
         return gross, cash
 
+    def _extract_payer_nets(self, item: dict) -> list[tuple[str, str, float]]:
+        """Extract (payer_raw, plan_raw, net_dollar) from payers_information.
+
+        Walks standard_charges[].payers_information[] (CMS 2.0) and also
+        a top-level payers_information array if present.
+        """
+        nets: list[tuple[str, str, float]] = []
+
+        payer_lists: list[Any] = []
+
+        # Top-level on the charge item
+        top = item.get("payers_information")
+        if isinstance(top, list):
+            payer_lists.append(top)
+        elif isinstance(top, dict):
+            payer_lists.append([top])
+
+        # Nested under each standard_charges entry
+        std_charges = item.get("standard_charges", [])
+        if isinstance(std_charges, list):
+            for sc in std_charges:
+                if not isinstance(sc, dict):
+                    continue
+                pi = sc.get("payers_information")
+                if isinstance(pi, list):
+                    payer_lists.append(pi)
+                elif isinstance(pi, dict):
+                    payer_lists.append([pi])
+
+                # Some files put payer fields directly on the standard_charge row
+                if "payer_name" in sc or "payer" in sc:
+                    payer_lists.append([sc])
+
+        for payer_list in payer_lists:
+            for entry in payer_list:
+                if not isinstance(entry, dict):
+                    continue
+
+                payer = self._get_first_match(entry, self.PAYER_NAME_FIELDS, "")
+                plan = self._get_first_match(entry, self.PLAN_NAME_FIELDS, "")
+                if not payer:
+                    continue
+
+                net = None
+                for field in self.NET_DOLLAR_FIELDS:
+                    if field in entry:
+                        net = self._parse_dollar(entry[field])
+                        if net is not None:
+                            break
+
+                if net is None:
+                    for field in self.ESTIMATED_AMOUNT_FIELDS:
+                        if field in entry:
+                            net = self._parse_dollar(entry[field])
+                            if net is not None:
+                                break
+
+                if net is None:
+                    continue
+
+                nets.append((str(payer).strip(), str(plan or "").strip(), net))
+
+        return nets
+
+    def _records_from_item(
+        self,
+        item: dict,
+        codes_seen: set[tuple[str, str]],
+        net_keys_seen: set[tuple[str, str, str, str]],
+    ) -> list[dict]:
+        """Build overall + net records from one charge item."""
+        records: list[dict] = []
+        codes = self._extract_codes(item)
+        if not codes:
+            return records
+
+        gross, cash = self._extract_prices(item)
+        payer_nets = self._extract_payer_nets(item)
+
+        for code, vocab_id in codes:
+            key = (code, vocab_id)
+            if key not in codes_seen:
+                codes_seen.add(key)
+                records.append(
+                    {
+                        "vocabulary_id": vocab_id,
+                        "concept_code": code,
+                        "gross": gross,
+                        "cash": cash,
+                        "net": None,
+                        "payer_raw": None,
+                        "plan_raw": None,
+                    }
+                )
+
+            for payer_raw, plan_raw, net in payer_nets:
+                net_key = (code, vocab_id, payer_raw.lower(), plan_raw.lower())
+                if net_key in net_keys_seen:
+                    continue
+                net_keys_seen.add(net_key)
+                records.append(
+                    {
+                        "vocabulary_id": vocab_id,
+                        "concept_code": code,
+                        "gross": None,
+                        "cash": None,
+                        "net": net,
+                        "payer_raw": payer_raw,
+                        "plan_raw": plan_raw,
+                    }
+                )
+
+        return records
+
+    def _empty_frame(self) -> pd.DataFrame:
+        """Empty DataFrame with the parser output schema."""
+        return pd.DataFrame(
+            columns=[
+                "vocabulary_id",
+                "concept_code",
+                "gross",
+                "cash",
+                "net",
+                "payer_raw",
+                "plan_raw",
+            ]
+        )
+
     def _parse_large_json_streaming(self, file_path: Path) -> pd.DataFrame:
         """Parse a large JSON file using streaming with ijson.
 
@@ -269,12 +430,13 @@ class CMSStandardJSONScraper(BaseScraper):
             file_path: Path to the temp file containing JSON data
 
         Returns:
-            DataFrame with vocabulary_id, concept_code, gross, cash columns
+            DataFrame with vocabulary_id, concept_code, gross, cash, net columns
         """
         import ijson
 
         records = []
-        codes_seen = set()
+        codes_seen: set[tuple[str, str]] = set()
+        net_keys_seen: set[tuple[str, str, str, str]] = set()
         parse_errors = 0
         item_count = 0
 
@@ -321,26 +483,9 @@ class CMSStandardJSONScraper(BaseScraper):
                         continue
 
                     try:
-                        codes = self._extract_codes(item)
-                        if not codes:
-                            continue
-
-                        gross, cash = self._extract_prices(item)
-
-                        for code, vocab_id in codes:
-                            key = (code, vocab_id)
-                            if key in codes_seen:
-                                continue
-                            codes_seen.add(key)
-
-                            records.append(
-                                {
-                                    "vocabulary_id": vocab_id,
-                                    "concept_code": code,
-                                    "gross": gross,
-                                    "cash": cash,
-                                }
-                            )
+                        records.extend(
+                            self._records_from_item(item, codes_seen, net_keys_seen)
+                        )
                     except Exception as e:
                         parse_errors += 1
                         if parse_errors <= 10:
@@ -366,11 +511,7 @@ class CMSStandardJSONScraper(BaseScraper):
                 file_path.unlink()
                 self.logger.debug("temp_file_cleaned", path=str(file_path))
 
-        return (
-            pd.DataFrame(records)
-            if records
-            else pd.DataFrame(columns=["vocabulary_id", "concept_code", "gross", "cash"])
-        )
+        return pd.DataFrame(records) if records else self._empty_frame()
 
     def parse_data(self, raw_data: bytes | str | dict | list | Path) -> pd.DataFrame:
         """Parse CMS standard JSON format (v2.0) with field variation handling.
@@ -379,7 +520,7 @@ class CMSStandardJSONScraper(BaseScraper):
             raw_data: Parsed JSON data following CMS schema, or Path for streaming
 
         Returns:
-            DataFrame with vocabulary_id, concept_code, gross, cash columns
+            DataFrame with vocabulary_id, concept_code, gross, cash, net columns
         """
         # Handle large file streaming
         if isinstance(raw_data, Path):
@@ -395,10 +536,11 @@ class CMSStandardJSONScraper(BaseScraper):
                 hospital=self.hospital_config.hospital,
                 data_type=type(raw_data).__name__,
             )
-            return pd.DataFrame(columns=["vocabulary_id", "concept_code", "gross", "cash"])
+            return self._empty_frame()
 
-        records = []
-        codes_seen = set()
+        records: list[dict] = []
+        codes_seen: set[tuple[str, str]] = set()
+        net_keys_seen: set[tuple[str, str, str, str]] = set()
         parse_errors = 0
 
         for item in charges:
@@ -406,27 +548,7 @@ class CMSStandardJSONScraper(BaseScraper):
                 continue
 
             try:
-                codes = self._extract_codes(item)
-                if not codes:
-                    continue
-
-                gross, cash = self._extract_prices(item)
-
-                for code, vocab_id in codes:
-                    # Skip duplicates
-                    key = (code, vocab_id)
-                    if key in codes_seen:
-                        continue
-                    codes_seen.add(key)
-
-                    records.append(
-                        {
-                            "vocabulary_id": vocab_id,
-                            "concept_code": code,
-                            "gross": gross,
-                            "cash": cash,
-                        }
-                    )
+                records.extend(self._records_from_item(item, codes_seen, net_keys_seen))
             except Exception as e:
                 parse_errors += 1
                 if parse_errors <= 10:  # Log first 10 errors
@@ -443,13 +565,10 @@ class CMSStandardJSONScraper(BaseScraper):
             "cms_json_parsed",
             records=len(records),
             unique_codes=len(codes_seen),
+            net_rows=sum(1 for r in records if r.get("net") is not None),
         )
 
-        return (
-            pd.DataFrame(records)
-            if records
-            else pd.DataFrame(columns=["vocabulary_id", "concept_code", "gross", "cash"])
-        )
+        return pd.DataFrame(records) if records else self._empty_frame()
 
 
 class HyveCMSJSONScraper(CMSStandardJSONScraper):

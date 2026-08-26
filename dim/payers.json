@@ -1,0 +1,236 @@
+{
+  "payers": {
+    "aetna": {
+      "aliases": [
+        "aetna",
+        "aetna health",
+        "aetna better health",
+        "kancare aetna",
+        "medicare advantage aetna",
+        "aetna medicare advantage"
+      ]
+    },
+    "unitedhealthcare": {
+      "aliases": [
+        "united healthcare",
+        "unitedhealthcare",
+        "united health care",
+        "uhc",
+        "kancare united healthcare",
+        "medicare advantage united healthcare"
+      ]
+    },
+    "bcbs": {
+      "aliases": [
+        "blue cross blue shield",
+        "bluecross blueshield",
+        "bcbs",
+        "blue cross",
+        "blue shield",
+        "anthem",
+        "anthem blue cross",
+        "anthem bluecross"
+      ]
+    },
+    "humana": {
+      "aliases": [
+        "humana",
+        "medicare advantage humana",
+        "medicare advantage choicecare network",
+        "choicecare",
+        "choicecare network"
+      ]
+    },
+    "centene": {
+      "aliases": [
+        "centene",
+        "kancare sunflower",
+        "sunflower",
+        "sunflower health",
+        "medicare advantage allwell",
+        "allwell",
+        "medicare advantage ambetter",
+        "ambetter"
+      ]
+    },
+    "cigna": {
+      "aliases": [
+        "cigna",
+        "cigna healthcare",
+        "cigna health"
+      ]
+    },
+    "kaiser": {
+      "aliases": [
+        "kaiser",
+        "kaiser permanente",
+        "kp"
+      ]
+    },
+    "molina": {
+      "aliases": [
+        "molina",
+        "molina healthcare"
+      ]
+    },
+    "medica": {
+      "aliases": [
+        "medica",
+        "medicare advantage medica"
+      ]
+    },
+    "tricare": {
+      "aliases": [
+        "tricare",
+        "tri care"
+      ]
+    },
+    "va": {
+      "aliases": [
+        "va",
+        "veterans affairs",
+        "veterans administration",
+        "vha"
+      ]
+    }
+  },
+  "plans": {
+    "commercial": {
+      "aliases": [
+        "commercial",
+        "ppo",
+        "hmo",
+        "epo",
+        "pos",
+        "blue choice",
+        "bluechoice"
+      ]
+    },
+    "medicare_advantage": {
+      "aliases": [
+        "medicare advantage",
+        "medicare adv",
+        "ma",
+        "medicare advantage humana",
+        "medicare advantage aetna",
+        "medicare advantage united healthcare",
+        "medicare advantage allwell",
+        "medicare advantage medica",
+        "medicare advantage choicecare",
+        "medicare advantage ambetter",
+        "medicare advantage ascension complete",
+        "aetna medicare advantage",
+        "choicecare"
+      ]
+    },
+    "medicaid": {
+      "aliases": [
+        "medicaid",
+        "medicaid advantage",
+        "medicaid advantage kancare aetna",
+        "medicaid advantage kancare sunflower",
+        "medicaid advantage kancare united healthcare",
+        "kancare",
+        "managed medicaid"
+      ]
+    },
+    "exchange": {
+      "aliases": [
+        "exchange",
+        "marketplace",
+        "aca",
+        "ambetter"
+      ]
+    },
+    "tricare": {
+      "aliases": [
+        "tricare"
+      ]
+    },
+    "va": {
+      "aliases": [
+        "va",
+        "veterans affairs",
+        "veterans administration"
+      ]
+    },
+    "other": {
+      "aliases": []
+    }
+  },
+  "skip_payers": [
+    "cdm default",
+    "default",
+    "n/a",
+    "na",
+    "none",
+    "null"
+  ],
+  "combined_rules": [
+    {
+      "contains": ["kancare", "aetna"],
+      "payer": "aetna",
+      "plan": "medicaid"
+    },
+    {
+      "contains": ["kancare", "sunflower"],
+      "payer": "centene",
+      "plan": "medicaid"
+    },
+    {
+      "contains": ["kancare", "united"],
+      "payer": "unitedhealthcare",
+      "plan": "medicaid"
+    },
+    {
+      "contains": ["medicare advantage", "aetna"],
+      "payer": "aetna",
+      "plan": "medicare_advantage"
+    },
+    {
+      "contains": ["aetna medicare advantage"],
+      "payer": "aetna",
+      "plan": "medicare_advantage"
+    },
+    {
+      "contains": ["medicare advantage", "united"],
+      "payer": "unitedhealthcare",
+      "plan": "medicare_advantage"
+    },
+    {
+      "contains": ["medicare advantage", "humana"],
+      "payer": "humana",
+      "plan": "medicare_advantage"
+    },
+    {
+      "contains": ["choicecare"],
+      "payer": "humana",
+      "plan": "medicare_advantage"
+    },
+    {
+      "contains": ["allwell"],
+      "payer": "centene",
+      "plan": "medicare_advantage"
+    },
+    {
+      "contains": ["ambetter"],
+      "payer": "centene",
+      "plan": "exchange"
+    },
+    {
+      "contains": ["medicare advantage", "medica"],
+      "payer": "medica",
+      "plan": "medicare_advantage"
+    },
+    {
+      "contains": ["tricare"],
+      "payer": "tricare",
+      "plan": "tricare"
+    },
+    {
+      "contains": ["veterans affairs"],
+      "payer": "va",
+      "plan": "va"
+    }
+  ]
+}

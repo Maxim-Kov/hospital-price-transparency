@@ -9,6 +9,10 @@ logs/
 trash/
 ignore/
 
+# Local raw MRF downloads (too large for git)
+*_raw.csv
+data/**/*_raw.csv
+
 # Python
 __pycache__/
 *.py[cod]

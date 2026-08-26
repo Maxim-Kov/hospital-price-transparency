@@ -125,6 +125,60 @@ class TestCMSStandardJSONScraper:
         assert df.iloc[0]["gross"] == 100
         assert df.iloc[0]["cash"] == 80
 
+    def test_parse_data_with_payers_information(
+        self, json_hospital_config, scraper_config, mock_http_client, mock_normalizer
+    ):
+        """Test JSON parsing extracts per-payer negotiated nets."""
+        scraper = CMSStandardJSONScraper(
+            hospital_config=json_hospital_config,
+            scraper_config=scraper_config,
+            http_client=mock_http_client,
+            normalizer=mock_normalizer,
+        )
+
+        json_data = {
+            "standard_charge_information": [
+                {
+                    "code_information": [{"type": "CPT", "code": "80320"}],
+                    "standard_charges": [
+                        {
+                            "gross_charge": 76.55,
+                            "discounted_cash": 48.23,
+                            "payers_information": [
+                                {
+                                    "payer_name": "AETNA",
+                                    "plan_name": "COMMERCIAL",
+                                    "standard_charge_dollar": 26.79,
+                                },
+                                {
+                                    "payer_name": "KANCARE AETNA",
+                                    "plan_name": "MEDICAID ADVANTAGE KANCARE AETNA",
+                                    "standard_charge_dollar": 15.5,
+                                },
+                                {
+                                    "payer_name": "CDM DEFAULT",
+                                    "plan_name": "CDM DEFAULT",
+                                    "estimated_amount": 999999999,
+                                },
+                            ],
+                        }
+                    ],
+                },
+            ]
+        }
+
+        df = scraper.parse_data(json_data)
+
+        overall = df[df["net"].isna()]
+        nets = df[df["net"].notna()]
+        assert len(overall) == 1
+        assert overall.iloc[0]["gross"] == 76.55
+        assert overall.iloc[0]["cash"] == 48.23
+        assert len(nets) == 2  # sentinel CDM row skipped (no usable dollar)
+        assert set(nets["payer_raw"]) == {"AETNA", "KANCARE AETNA"}
+        assert 26.79 in nets["net"].values
+        assert 15.5 in nets["net"].values
+
     def test_parse_data_flat_list(
         self, json_hospital_config, scraper_config, mock_http_client, mock_normalizer
     ):
@@ -234,6 +288,61 @@ Extended Visit,99214,CPT,,,150.00,120.00,
         assert len(df) >= 1
         # The parser should find CPT codes
         assert any(df["concept_code"] == "99213")
+
+    def test_parse_tall_payer_rows(
+        self, csv_hospital_config, scraper_config, mock_http_client, mock_normalizer
+    ):
+        """Test tall CMS CSV format with payer_name / negotiated_dollar columns."""
+        scraper = CMSStandardCSVScraper(
+            hospital_config=csv_hospital_config,
+            scraper_config=scraper_config,
+            http_client=mock_http_client,
+            normalizer=mock_normalizer,
+        )
+
+        csv_data = """hospital_name,last_updated_on
+Test Hospital,01/01/2024
+description,code|1,code|1|type,standard_charge|gross,standard_charge|discounted_cash,payer_name,plan_name,standard_charge|negotiated_dollar,estimated_amount
+ETHANOL URINE,80320,CPT,76.55,48.23,CDM DEFAULT,CDM DEFAULT,,999999999
+ETHANOL URINE,80320,CPT,76.55,,AETNA,COMMERCIAL,26.79,
+ETHANOL URINE,80320,CPT,76.55,,KANCARE AETNA,MEDICAID ADVANTAGE KANCARE AETNA,15.5,
+"""
+
+        df = scraper.parse_data(csv_data)
+
+        overall = df[df["net"].isna()]
+        nets = df[df["net"].notna()]
+        assert len(overall) == 1
+        assert overall.iloc[0]["gross"] == 76.55
+        assert overall.iloc[0]["cash"] == 48.23
+        assert len(nets) == 2
+        assert set(nets["payer_raw"]) == {"AETNA", "KANCARE AETNA"}
+
+    def test_parse_wide_payer_columns(
+        self, csv_hospital_config, scraper_config, mock_http_client, mock_normalizer
+    ):
+        """Test wide CMS CSV format with standard_charge|Payer|Plan columns."""
+        scraper = CMSStandardCSVScraper(
+            hospital_config=csv_hospital_config,
+            scraper_config=scraper_config,
+            http_client=mock_http_client,
+            normalizer=mock_normalizer,
+        )
+
+        csv_data = """hospital_name,last_updated_on
+Test Hospital,01/01/2024
+description,code|1,code|1|type,standard_charge|gross,standard_charge|discounted_cash,standard_charge|Aetna|Commercial,standard_charge|United Healthcare|PPO
+Office Visit,99213,CPT,150.00,100.00,90.00,85.00
+"""
+
+        df = scraper.parse_data(csv_data)
+
+        overall = df[df["net"].isna()]
+        nets = df[df["net"].notna()]
+        assert len(overall) == 1
+        assert len(nets) == 2
+        assert set(nets["payer_raw"]) == {"Aetna", "United Healthcare"}
+        assert set(nets["net"]) == {90.0, 85.0}
 
 
 class TestScraperRegistry:

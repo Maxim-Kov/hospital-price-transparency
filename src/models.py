@@ -31,10 +31,11 @@ class ScrapeStatus(str, Enum):
 
 
 class PriceType(str, Enum):
-    """Type of price (gross charge vs cash/discounted price)."""
+    """Type of price (gross charge, cash/discounted, or insurer net)."""
 
     GROSS = "gross"
     CASH = "cash"
+    NET = "net"
 
 
 # CPT code pattern: 5 characters, alphanumeric (e.g., 99213, 0001A)
@@ -121,13 +122,16 @@ class PriceRecord(BaseModel):
     """A single price record from the scraped data.
 
     Represents one row of output in the JSONL files.
+    Cash/gross rows omit payer/plan. Net rows require both.
     """
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
     cpt: str = Field(..., description="CPT/HCPCS code")
-    type: PriceType = Field(..., description="Price type (gross or cash)")
+    type: PriceType = Field(..., description="Price type (gross, cash, or net)")
     price: Annotated[float, Field(ge=0, description="Price in dollars")]
+    payer: str | None = Field(None, description="Canonical payer id (net rows only)")
+    plan: str | None = Field(None, description="Canonical plan id (net rows only)")
 
     @field_validator("cpt")
     @classmethod
@@ -137,6 +141,25 @@ class PriceRecord(BaseModel):
         if not CPT_PATTERN.match(v):
             raise ValueError(f"Invalid CPT code format: {v}")
         return v
+
+    def model_post_init(self, __context: object) -> None:
+        """Require payer/plan for net; drop them for cash/gross."""
+        if self.type == PriceType.NET:
+            if not self.payer or not self.plan:
+                raise ValueError("Net price records require payer and plan")
+        else:
+            # Ensure cash/gross rows do not carry payer fields
+            object.__setattr__(self, "payer", None)
+            object.__setattr__(self, "plan", None)
+
+    def model_dump(self, **kwargs):  # type: ignore[override]
+        """Omit null payer/plan from JSONL output."""
+        data = super().model_dump(**kwargs)
+        if data.get("payer") is None:
+            data.pop("payer", None)
+        if data.get("plan") is None:
+            data.pop("plan", None)
+        return data
 
 
 class ScrapeResult(BaseModel):

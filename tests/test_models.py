@@ -103,6 +103,33 @@ class TestPriceRecord:
         assert record.type == PriceType.GROSS
         assert record.price == 100.50
 
+    def test_net_price_record(self):
+        """Test creating a valid net price record with payer/plan."""
+        record = PriceRecord(
+            cpt="99213",
+            type=PriceType.NET,
+            price=26.79,
+            payer="aetna",
+            plan="commercial",
+        )
+        assert record.payer == "aetna"
+        assert record.plan == "commercial"
+        dumped = record.model_dump()
+        assert dumped["payer"] == "aetna"
+        assert dumped["plan"] == "commercial"
+
+    def test_net_requires_payer_plan(self):
+        """Test that net rows without payer/plan fail validation."""
+        with pytest.raises(ValidationError):
+            PriceRecord(cpt="99213", type=PriceType.NET, price=10.0)
+
+    def test_cash_omits_payer_from_dump(self):
+        """Test that cash/gross dumps omit null payer/plan."""
+        record = PriceRecord(cpt="99213", type=PriceType.CASH, price=80.0, payer="aetna")
+        dumped = record.model_dump()
+        assert "payer" not in dumped
+        assert "plan" not in dumped
+
     def test_cpt_uppercase(self):
         """Test that CPT codes are uppercased."""
         record = PriceRecord(cpt="0001a", type=PriceType.CASH, price=50.0)

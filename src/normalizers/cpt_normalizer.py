@@ -13,6 +13,9 @@ from ..utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+# Sentinel values used by some hospitals instead of a real dollar amount
+SENTINEL_AMOUNTS = {999999999.0, 99999999.0, 9999999.0}
+
 
 class CPTNormalizer:
     """Normalizes hospital price data to standard CPT/HCPCS schema.
@@ -21,7 +24,7 @@ class CPTNormalizer:
     - Code cleaning (remove leading zeros, validate format)
     - Price column normalization (remove $, commas, convert to numeric)
     - Filtering to valid CPT4 and HCPCS codes using OHDSI Athena vocabulary
-    - Melting wide format to long format (cpt, type, price)
+    - Melting wide format to long format (cpt, type, price [, payer, plan])
     """
 
     # Pattern for valid CPT codes (5 alphanumeric characters)
@@ -80,21 +83,63 @@ class CPTNormalizer:
             value: Price value (may contain $, commas, etc.)
 
         Returns:
-            Float price or None if invalid
+            Float price or None if invalid / sentinel
         """
         if pd.isna(value):
             return None
 
         if isinstance(value, (int, float)):
-            return float(value)
+            price = float(value)
+        else:
+            # Remove currency symbols and commas
+            cleaned = str(value).replace(",", "").replace("$", "").strip()
+            try:
+                price = float(cleaned)
+            except (ValueError, TypeError):
+                return None
 
-        # Remove currency symbols and commas
-        cleaned = str(value).replace(",", "").replace("$", "").strip()
-
-        try:
-            return float(cleaned)
-        except (ValueError, TypeError):
+        if price in SENTINEL_AMOUNTS:
             return None
+        return price
+
+    def _filter_vocab(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Filter to CPT/HCPCS codes and optional Athena vocabulary."""
+        df = df.copy()
+        df["vocabulary_id"] = df["vocabulary_id"].astype(str).str.lower()
+        df = df[df["vocabulary_id"].isin(["cpt", "cpt4", "hcpcs"])]
+
+        if self.concept_codes:
+            initial_count = len(df)
+            df = pd.merge(
+                df,
+                pd.DataFrame({"concept_code": list(self.concept_codes)}),
+                on="concept_code",
+                how="inner",
+            )
+            filtered_count = initial_count - len(df)
+            if filtered_count > 0:
+                logger.debug("filtered_invalid_codes", count=filtered_count)
+
+        return df
+
+    def _finalize(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Drop invalid prices/codes and sort output."""
+        df = df.drop_duplicates()
+        df = df.dropna(subset=["price"])
+        df = df[df["price"] > 0]
+        df["price"] = df["price"].round(2)
+
+        valid_mask = df["cpt"].apply(lambda x: bool(self.CPT_PATTERN.match(str(x))))
+        invalid_count = (~valid_mask).sum()
+        if invalid_count > 0:
+            logger.warning("invalid_cpt_format", count=invalid_count)
+            df = df[valid_mask]
+
+        sort_cols = ["cpt", "type"]
+        if "payer" in df.columns:
+            sort_cols.extend(["payer", "plan"])
+        df = df.sort_values(sort_cols)
+        return df.reset_index(drop=True)
 
     def normalize(
         self,
@@ -111,11 +156,15 @@ class CPTNormalizer:
         - concept_code: The procedure code
         - gross: Gross charge amount
         - cash: Cash/discounted price
+        - net (optional): Negotiated insurer dollar amount
+        - payer (optional): Canonical payer id for net rows
+        - plan (optional): Canonical plan id for net rows
 
         Output schema:
         - cpt: 5-character CPT code
-        - type: 'gross' or 'cash'
+        - type: 'gross', 'cash', or 'net'
         - price: Numeric price value
+        - payer / plan: present on net rows (NaN on cash/gross)
 
         Args:
             df: Input DataFrame with price data
@@ -144,6 +193,8 @@ class CPTNormalizer:
         if missing:
             raise ValueError(f"Missing required columns: {missing}")
 
+        has_net = "net" in df.columns and df["net"].notna().any()
+
         # Clean CPT codes
         df["concept_code"] = df["concept_code"].apply(
             lambda x: self.strip_leading_zero(str(x).strip()) if pd.notna(x) else ""
@@ -152,55 +203,60 @@ class CPTNormalizer:
         # Clean price columns and ensure numeric dtype
         df["gross"] = df["gross"].apply(self.clean_price)
         df["cash"] = df["cash"].apply(self.clean_price)
-
-        # Convert to numeric dtype (handles None -> NaN properly)
         df["gross"] = pd.to_numeric(df["gross"], errors="coerce")
         df["cash"] = pd.to_numeric(df["cash"], errors="coerce")
 
-        # Filter to CPT and HCPCS vocabulary only
-        df["vocabulary_id"] = df["vocabulary_id"].astype(str).str.lower()
-        df = df[df["vocabulary_id"].isin(["cpt", "cpt4", "hcpcs"])]
+        if has_net:
+            df["net"] = df["net"].apply(self.clean_price)
+            df["net"] = pd.to_numeric(df["net"], errors="coerce")
+            if "payer" not in df.columns:
+                df["payer"] = None
+            if "plan" not in df.columns:
+                df["plan"] = None
 
-        # Filter to valid concept codes if we have the vocabulary
-        if self.concept_codes:
-            initial_count = len(df)
-            df = pd.merge(
-                df,
-                pd.DataFrame({"concept_code": list(self.concept_codes)}),
-                on="concept_code",
-                how="inner",
-            )
-            filtered_count = initial_count - len(df)
-            if filtered_count > 0:
-                logger.debug("filtered_invalid_codes", count=filtered_count)
+        df = self._filter_vocab(df)
+        if df.empty:
+            cols = ["cpt", "type", "price"]
+            if has_net:
+                cols.extend(["payer", "plan"])
+            return pd.DataFrame(columns=cols)
 
-        # Aggregate duplicates by taking max price
-        df = df.groupby(["vocabulary_id", "concept_code"])[["cash", "gross"]].max().reset_index()
-
-        # Melt to long format
-        df = pd.melt(
-            df,
+        # --- Overall cash / gross (one max per CPT) ---
+        overall = (
+            df.groupby(["vocabulary_id", "concept_code"])[["cash", "gross"]]
+            .max()
+            .reset_index()
+        )
+        overall = pd.melt(
+            overall,
             id_vars="concept_code",
             value_vars=["cash", "gross"],
             var_name="type",
             value_name="price",
         )
+        overall = overall.rename(columns={"concept_code": "cpt"})
+        overall["payer"] = pd.NA
+        overall["plan"] = pd.NA
 
-        # Rename to output schema
-        df = df.rename(columns={"concept_code": "cpt"})
+        frames = [overall]
 
-        # Final cleanup
-        df = df.drop_duplicates()
-        df = df.dropna(subset=["price"])
-        df = df[df["price"] > 0]  # Remove zero prices
-        df["price"] = df["price"].round(2)
-        df = df.sort_values(["cpt", "type"])
+        # --- Net by payer + plan ---
+        if has_net:
+            net_df = df[df["net"].notna() & df["payer"].notna() & df["plan"].notna()].copy()
+            if not net_df.empty:
+                net_agg = (
+                    net_df.groupby(["concept_code", "payer", "plan"])["net"]
+                    .max()
+                    .reset_index()
+                )
+                net_agg = net_agg.rename(columns={"concept_code": "cpt", "net": "price"})
+                net_agg["type"] = "net"
+                frames.append(net_agg[["cpt", "type", "price", "payer", "plan"]])
 
-        # Validate CPT format
-        valid_mask = df["cpt"].apply(lambda x: bool(self.CPT_PATTERN.match(str(x))))
-        invalid_count = (~valid_mask).sum()
-        if invalid_count > 0:
-            logger.warning("invalid_cpt_format", count=invalid_count)
-            df = df[valid_mask]
+        result = pd.concat(frames, ignore_index=True)
 
-        return df.reset_index(drop=True)
+        # If no net rows survived, drop empty payer/plan columns for backward compat
+        if not has_net or result["type"].eq("net").sum() == 0:
+            result = result.drop(columns=["payer", "plan"], errors="ignore")
+
+        return self._finalize(result)

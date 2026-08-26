@@ -162,3 +162,64 @@ class TestCPTNormalizer:
 
         # Check sorting
         assert result.iloc[0]["type"] == "cash"  # cash before gross
+
+    def test_normalize_with_net_rows(self, normalizer):
+        """Test that net rows are kept at payer+plan grain."""
+        df = pd.DataFrame(
+            {
+                "vocabulary_id": ["cpt", "cpt", "cpt"],
+                "concept_code": ["99213", "99213", "99213"],
+                "gross": [100.0, None, None],
+                "cash": [80.0, None, None],
+                "net": [None, 26.79, 15.5],
+                "payer": [None, "aetna", "aetna"],
+                "plan": [None, "commercial", "medicaid"],
+            }
+        )
+
+        result = normalizer.normalize(df)
+
+        assert set(result["type"].unique()) == {"cash", "gross", "net"}
+        nets = result[result["type"] == "net"]
+        assert len(nets) == 2
+        assert set(zip(nets["payer"], nets["plan"], nets["price"])) == {
+            ("aetna", "commercial", 26.79),
+            ("aetna", "medicaid", 15.5),
+        }
+
+    def test_normalize_net_dedup_max(self, normalizer):
+        """Test that duplicate net rows take max price per payer+plan."""
+        df = pd.DataFrame(
+            {
+                "vocabulary_id": ["cpt", "cpt"],
+                "concept_code": ["99213", "99213"],
+                "gross": [None, None],
+                "cash": [None, None],
+                "net": [20.0, 30.0],
+                "payer": ["aetna", "aetna"],
+                "plan": ["commercial", "commercial"],
+            }
+        )
+
+        result = normalizer.normalize(df)
+        nets = result[result["type"] == "net"]
+        assert len(nets) == 1
+        assert nets.iloc[0]["price"] == 30.0
+
+    def test_normalize_rejects_sentinel_amount(self, normalizer):
+        """Test that sentinel estimated amounts are dropped."""
+        df = pd.DataFrame(
+            {
+                "vocabulary_id": ["cpt"],
+                "concept_code": ["99213"],
+                "gross": [100.0],
+                "cash": [80.0],
+                "net": [999999999],
+                "payer": ["aetna"],
+                "plan": ["commercial"],
+            }
+        )
+
+        result = normalizer.normalize(df)
+        assert "net" not in result["type"].values or len(result[result["type"] == "net"]) == 0
+        assert set(result["type"].unique()) == {"cash", "gross"}

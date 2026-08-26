@@ -12,8 +12,8 @@ from typing import Any
 import pandas as pd
 
 from ..config import ScraperConfig, get_output_path
-from ..models import HospitalConfig, PriceRecord, ScrapeResult
-from ..normalizers import CPTNormalizer
+from ..models import HospitalConfig, PriceRecord, PriceType, ScrapeResult
+from ..normalizers import CPTNormalizer, PayerPlanNormalizer
 from ..utils.http_client import RetryHTTPClient
 from ..utils.logger import ScrapeLogContext, get_logger
 
@@ -34,6 +34,7 @@ class BaseScraper(ABC):
         scraper_config: ScraperConfig,
         http_client: RetryHTTPClient,
         normalizer: CPTNormalizer,
+        payer_normalizer: PayerPlanNormalizer | None = None,
     ):
         """Initialize the scraper.
 
@@ -42,11 +43,13 @@ class BaseScraper(ABC):
             scraper_config: Global scraper configuration
             http_client: HTTP client with retry logic
             normalizer: CPT code normalizer
+            payer_normalizer: Optional payer/plan name normalizer
         """
         self.hospital_config = hospital_config
         self.scraper_config = scraper_config
         self.http_client = http_client
         self.normalizer = normalizer
+        self.payer_normalizer = payer_normalizer or PayerPlanNormalizer()
         self.logger = get_logger(
             __name__,
             hospital_npi=hospital_config.hospital_npi,
@@ -77,6 +80,11 @@ class BaseScraper(ABC):
         - gross: Gross charge amount
         - cash: Cash/discounted price amount
 
+        Optional columns for insurer nets:
+        - net: Negotiated dollar amount
+        - payer_raw: Raw payer name from the file
+        - plan_raw: Raw plan name from the file
+
         Args:
             raw_data: Raw data from fetch_data() (Path for large files streamed to disk)
 
@@ -88,11 +96,63 @@ class BaseScraper(ABC):
         """
         pass
 
+    def _apply_payer_normalization(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Map payer_raw/plan_raw to canonical payer/plan; drop skipped rows."""
+        if df.empty or "payer_raw" not in df.columns:
+            return df
+
+        df = df.copy()
+        self.payer_normalizer.clear_unmapped()
+
+        payers: list[str | None] = []
+        plans: list[str | None] = []
+        keep_mask: list[bool] = []
+
+        for _, row in df.iterrows():
+            net = row.get("net")
+            payer_raw = row.get("payer_raw")
+            plan_raw = row.get("plan_raw")
+
+            # Overall cash/gross rows (no net)
+            if pd.isna(net) or net is None:
+                payers.append(None)
+                plans.append(None)
+                keep_mask.append(True)
+                continue
+
+            result = self.payer_normalizer.normalize(
+                None if pd.isna(payer_raw) else str(payer_raw),
+                None if pd.isna(plan_raw) else str(plan_raw),
+            )
+            if result.skipped:
+                payers.append(None)
+                plans.append(None)
+                keep_mask.append(False)
+                continue
+
+            payers.append(result.payer)
+            plans.append(result.plan)
+            keep_mask.append(True)
+
+        df["payer"] = payers
+        df["plan"] = plans
+        df = df[keep_mask].reset_index(drop=True)
+
+        unmapped = self.payer_normalizer.unmapped_pairs
+        if unmapped:
+            self.logger.info(
+                "unmapped_payers_summary",
+                count=len(unmapped),
+                samples=sorted(unmapped)[:20],
+            )
+
+        return df
+
     def normalize(self, df: pd.DataFrame) -> pd.DataFrame:
         """Normalize parsed data to standard schema.
 
-        Applies CPT code normalization, filters invalid codes,
-        and transforms to the output format.
+        Applies payer/plan mapping, CPT code normalization, filters invalid
+        codes, and transforms to the output format.
 
         Args:
             df: DataFrame from parse_data()
@@ -100,6 +160,7 @@ class BaseScraper(ABC):
         Returns:
             Normalized DataFrame ready for output
         """
+        df = self._apply_payer_normalization(df)
         return self.normalizer.normalize(df)
 
     def _find_local_raw_file(self) -> Path | None:
@@ -238,18 +299,28 @@ class BaseScraper(ABC):
         """Save DataFrame to JSONL format.
 
         Args:
-            df: Normalized DataFrame with cpt, type, price columns
+            df: Normalized DataFrame with cpt, type, price [, payer, plan] columns
             output_path: Path to save the file
         """
         # Validate records before saving
         valid_records = []
         for _, row in df.iterrows():
             try:
-                record = PriceRecord(
-                    cpt=row["cpt"],
-                    type=row["type"],
-                    price=row["price"],
-                )
+                price_type = row["type"]
+                kwargs: dict[str, Any] = {
+                    "cpt": row["cpt"],
+                    "type": price_type,
+                    "price": row["price"],
+                }
+                if price_type == "net" or price_type == PriceType.NET:
+                    payer = row.get("payer")
+                    plan = row.get("plan")
+                    if pd.isna(payer) or pd.isna(plan):
+                        continue
+                    kwargs["payer"] = str(payer)
+                    kwargs["plan"] = str(plan)
+
+                record = PriceRecord(**kwargs)
                 valid_records.append(record.model_dump())
             except Exception as e:
                 self.logger.warning(

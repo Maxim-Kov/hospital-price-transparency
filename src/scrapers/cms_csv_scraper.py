@@ -193,6 +193,71 @@ class CMSStandardCSVScraper(BaseScraper):
             # Default to comma if detection fails
             return ","
 
+    def _parse_dollar(self, val: object) -> float | None:
+        """Parse a dollar amount, rejecting sentinels and non-numeric values."""
+        if val is None or (isinstance(val, float) and pd.isna(val)):
+            return None
+        try:
+            amount = float(str(val).replace(",", "").replace("$", "").strip())
+        except (ValueError, TypeError):
+            return None
+        if amount >= 9999999 or amount <= 0:
+            return None
+        return amount
+
+    def _empty_frame(self) -> pd.DataFrame:
+        """Empty DataFrame with the parser output schema."""
+        return pd.DataFrame(
+            columns=[
+                "vocabulary_id",
+                "concept_code",
+                "gross",
+                "cash",
+                "net",
+                "payer_raw",
+                "plan_raw",
+            ]
+        )
+
+    def _wide_net_columns(self, columns: list) -> list[tuple[str, str, str]]:
+        """Detect wide-format negotiated columns: standard_charge|{Payer}|{Plan}.
+
+        Returns list of (column_name, payer_raw, plan_raw).
+        Skips gross/cash/min/max/negotiated_* meta columns.
+        """
+        skip_tokens = {
+            "gross",
+            "discounted_cash",
+            "discounted cash",
+            "min",
+            "max",
+            "negotiated_dollar",
+            "negotiated_percentage",
+            "negotiated_algorithm",
+            "methodology",
+            "estimated_amount",
+        }
+        results: list[tuple[str, str, str]] = []
+        for col in columns:
+            col_str = str(col)
+            col_lower = col_str.lower().replace(" ", "")
+            if not col_lower.startswith("standard_charge|"):
+                continue
+            parts = [p.strip() for p in col_str.split("|")]
+            if len(parts) < 3:
+                continue
+            # parts[0] == standard_charge, parts[1]=payer, parts[2]=plan
+            # optionally more segments for setting etc.
+            payer = parts[1]
+            plan = parts[2]
+            if payer.lower().replace(" ", "") in skip_tokens:
+                continue
+            if plan.lower().replace(" ", "") in skip_tokens:
+                # Some files use standard_charge|gross style (2 meaningful parts)
+                continue
+            results.append((col_str, payer, plan))
+        return results
+
     def _extract_records_from_df(self, df: pd.DataFrame) -> list[dict]:
         """Extract price records from a DataFrame chunk.
 
@@ -200,7 +265,8 @@ class CMSStandardCSVScraper(BaseScraper):
             df: DataFrame with CSV data
 
         Returns:
-            List of record dicts with vocabulary_id, concept_code, gross, cash
+            List of record dicts with vocabulary_id, concept_code, gross, cash,
+            and optional net / payer_raw / plan_raw
         """
         records = []
 
@@ -210,6 +276,23 @@ class CMSStandardCSVScraper(BaseScraper):
         is_craneware = "hcpcs" in col_names_lower or "service_code" in col_names_lower
         # Simple 'code' column format (e.g., Google Drive files, some proprietary formats)
         has_simple_code = "code" in col_names_lower and "code|1" not in col_names_lower
+
+        # Tall CMS format: explicit payer_name / plan_name columns
+        has_tall_payer = "payer_name" in col_names_lower
+        payer_col = col_map.get("payer_name")
+        plan_col = col_map.get("plan_name")
+        negotiated_col = (
+            col_map.get("standard_charge|negotiated_dollar")
+            or col_map.get("negotiated_dollar")
+            or col_map.get("standard_charge|negotiated dollar")
+        )
+        estimated_col = col_map.get("estimated_amount")
+
+        # Wide CMS format: standard_charge|{Payer}|{Plan} columns
+        wide_net_cols = [] if has_tall_payer else self._wide_net_columns(list(df.columns))
+
+        # Track overall cash/gross per code so tall multi-row files don't duplicate
+        overall_seen: set[tuple[str, str]] = set()
 
         for _, row in df.iterrows():
             codes = []
@@ -258,40 +341,114 @@ class CMSStandardCSVScraper(BaseScraper):
             gross = None
             cash = None
 
-            # Look for price columns (various naming conventions)
-            for col in df.columns:
-                col_lower = col.lower()
-                val = row.get(col, "")
+            # Prefer explicit CMS column names
+            gross_col = col_map.get("standard_charge|gross") or col_map.get("gross")
+            cash_col = (
+                col_map.get("standard_charge|discounted_cash")
+                or col_map.get("discounted_cash")
+                or col_map.get("standard_charge|discounted cash")
+            )
+            if gross_col:
+                gross = self._parse_dollar(row.get(gross_col, ""))
+            if cash_col:
+                cash = self._parse_dollar(row.get(cash_col, ""))
 
-                # Gross/list price columns
-                if gross is None and any(
-                    x in col_lower for x in ["gross", "price", "charge", "amount"]
-                ):
-                    # Avoid matching "discounted" or "cash" columns
-                    if not any(x in col_lower for x in ["cash", "discounted", "negotiated"]):
-                        try:
-                            gross = float(str(val).replace(",", "").replace("$", ""))
-                        except (ValueError, TypeError):
-                            pass
+            # Fall back to heuristic column matching
+            if gross is None or cash is None:
+                for col in df.columns:
+                    col_lower = col.lower()
+                    val = row.get(col, "")
 
-                # Cash/discounted price columns
-                if cash is None and any(x in col_lower for x in ["cash", "discounted", "self_pay"]):
-                    try:
-                        cash = float(str(val).replace(",", "").replace("$", ""))
-                    except (ValueError, TypeError):
-                        pass
+                    # Gross/list price columns
+                    if gross is None and any(
+                        x in col_lower for x in ["gross", "price", "charge", "amount"]
+                    ):
+                        # Avoid matching "discounted" or "cash" columns
+                        if not any(
+                            x in col_lower
+                            for x in ["cash", "discounted", "negotiated", "payer", "estimated"]
+                        ):
+                            gross = self._parse_dollar(val)
 
-            # Create a record for each valid code
+                    # Cash/discounted price columns
+                    if cash is None and any(
+                        x in col_lower for x in ["cash", "discounted", "self_pay"]
+                    ):
+                        cash = self._parse_dollar(val)
+
+            # --- Tall format: one payer/plan per row ---
+            tall_net = None
+            tall_payer = None
+            tall_plan = None
+            if has_tall_payer and payer_col:
+                tall_payer = str(row.get(payer_col, "")).strip()
+                tall_plan = str(row.get(plan_col, "")).strip() if plan_col else ""
+                if negotiated_col:
+                    tall_net = self._parse_dollar(row.get(negotiated_col, ""))
+                if tall_net is None and estimated_col:
+                    tall_net = self._parse_dollar(row.get(estimated_col, ""))
+
             for code, code_type in codes:
                 vocab_id = "cpt" if code_type in ("CPT", "CPT4") else "hcpcs"
-                records.append(
-                    {
-                        "vocabulary_id": vocab_id,
-                        "concept_code": code,
-                        "gross": gross,
-                        "cash": cash,
-                    }
-                )
+                overall_key = (code, vocab_id)
+
+                # Emit overall cash/gross once per code (tall files repeat across payers)
+                if overall_key not in overall_seen:
+                    overall_seen.add(overall_key)
+                    records.append(
+                        {
+                            "vocabulary_id": vocab_id,
+                            "concept_code": code,
+                            "gross": gross,
+                            "cash": cash,
+                            "net": None,
+                            "payer_raw": None,
+                            "plan_raw": None,
+                        }
+                    )
+                elif not has_tall_payer and not wide_net_cols:
+                    # Non-payer formats: keep prior behavior of one row per code occurrence
+                    records.append(
+                        {
+                            "vocabulary_id": vocab_id,
+                            "concept_code": code,
+                            "gross": gross,
+                            "cash": cash,
+                            "net": None,
+                            "payer_raw": None,
+                            "plan_raw": None,
+                        }
+                    )
+
+                if tall_net is not None and tall_payer:
+                    records.append(
+                        {
+                            "vocabulary_id": vocab_id,
+                            "concept_code": code,
+                            "gross": None,
+                            "cash": None,
+                            "net": tall_net,
+                            "payer_raw": tall_payer,
+                            "plan_raw": tall_plan or "",
+                        }
+                    )
+
+                # Wide format: one net per payer/plan column
+                for col_name, payer_raw, plan_raw in wide_net_cols:
+                    net = self._parse_dollar(row.get(col_name, ""))
+                    if net is None:
+                        continue
+                    records.append(
+                        {
+                            "vocabulary_id": vocab_id,
+                            "concept_code": code,
+                            "gross": None,
+                            "cash": None,
+                            "net": net,
+                            "payer_raw": payer_raw,
+                            "plan_raw": plan_raw,
+                        }
+                    )
 
         return records
 
@@ -470,11 +627,7 @@ class CMSStandardCSVScraper(BaseScraper):
         records = self._extract_records_from_df(df)
 
         self.logger.debug("cms_csv_parsed", records=len(records))
-        return (
-            pd.DataFrame(records)
-            if records
-            else pd.DataFrame(columns=["vocabulary_id", "concept_code", "gross", "cash"])
-        )
+        return pd.DataFrame(records) if records else self._empty_frame()
 
     def _parse_large_file(self, file_path: Path) -> pd.DataFrame:
         """Parse a large CSV file using chunked processing.
@@ -483,7 +636,7 @@ class CMSStandardCSVScraper(BaseScraper):
             file_path: Path to the temp file containing CSV data
 
         Returns:
-            DataFrame with vocabulary_id, concept_code, gross, cash columns
+            DataFrame with vocabulary_id, concept_code, gross, cash, net columns
         """
         try:
             # Read first few lines to detect format
@@ -537,11 +690,7 @@ class CMSStandardCSVScraper(BaseScraper):
                 total_records=len(all_records),
             )
 
-            return (
-                pd.DataFrame(all_records)
-                if all_records
-                else pd.DataFrame(columns=["vocabulary_id", "concept_code", "gross", "cash"])
-            )
+            return pd.DataFrame(all_records) if all_records else self._empty_frame()
         finally:
             # Clean up temp file
             if file_path.exists():
