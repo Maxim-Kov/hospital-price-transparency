@@ -258,6 +258,43 @@ class CMSStandardCSVScraper(BaseScraper):
             results.append((col_str, payer, plan))
         return results
 
+    def _code_columns_for_hcpcs_filter(self, df: pd.DataFrame) -> list[str]:
+        """Column names that may hold CPT/HCPCS codes (same sources as extract)."""
+        col_map = {c.lower().strip(): c for c in df.columns}
+        names = set(col_map)
+        cols: list[str] = []
+        for name in ("hcpcs", "medicare_hcpcs", "cpt", "cpt4"):
+            if name in col_map:
+                cols.append(col_map[name])
+        if "code" in col_map and "code|1" not in names:
+            cols.append(col_map["code"])
+        for i in range(1, 10):
+            key = f"code|{i}"
+            if key in col_map:
+                cols.append(col_map[key])
+        return list(dict.fromkeys(cols))
+
+    def _filter_df_to_hcpcs(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Keep only rows whose code columns contain a requested HCPCS/CPT code.
+
+        Vectorized so large chunks skip the slow per-row extract loop.
+        """
+        wanted = self._hcpcs_wanted_set()
+        if wanted is None or df.empty:
+            return df
+
+        code_cols = self._code_columns_for_hcpcs_filter(df)
+        if not code_cols:
+            return df
+
+        mask = pd.Series(False, index=df.index)
+        for col in code_cols:
+            series = df[col].astype(str).str.strip().str.upper()
+            six = (series.str.len() == 6) & series.str.startswith("0")
+            series = series.where(~six, series.str[1:])
+            mask |= series.isin(wanted)
+        return df.loc[mask]
+
     def _extract_records_from_df(self, df: pd.DataFrame) -> list[dict]:
         """Extract price records from a DataFrame chunk.
 
@@ -268,6 +305,11 @@ class CMSStandardCSVScraper(BaseScraper):
             List of record dicts with vocabulary_id, concept_code, gross, cash,
             and optional net / payer_raw / plan_raw
         """
+        if self.scraper_config.hcpcs_codes:
+            df = self._filter_df_to_hcpcs(df)
+            if df.empty:
+                return []
+
         records = []
 
         # Create case-insensitive column lookup (also strip trailing spaces)
@@ -336,6 +378,15 @@ class CMSStandardCSVScraper(BaseScraper):
 
             if not codes:
                 continue
+
+            if self.scraper_config.hcpcs_codes:
+                codes = [
+                    (code, code_type)
+                    for code, code_type in codes
+                    if self._hcpcs_code_wanted(code)
+                ]
+                if not codes:
+                    continue
 
             # Find gross charge and cash price
             gross = None

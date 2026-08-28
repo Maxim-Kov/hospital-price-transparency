@@ -223,3 +223,62 @@ class TestCPTNormalizer:
         result = normalizer.normalize(df)
         assert "net" not in result["type"].values or len(result[result["type"] == "net"]) == 0
         assert set(result["type"].unique()) == {"cash", "gross"}
+
+    def test_filter_by_hcpcs(self, normalizer):
+        """Test post-normalize filter keeps only requested codes."""
+        df = pd.DataFrame(
+            {
+                "vocabulary_id": ["cpt", "hcpcs", "cpt"],
+                "concept_code": ["99213", "J0585", "99214"],
+                "gross": [100.0, 200.0, 300.0],
+                "cash": [80.0, 160.0, 240.0],
+            }
+        )
+        result = normalizer.normalize(df)
+        filtered = normalizer.filter_by_hcpcs(result, ["j0585", "99213"])
+
+        assert set(filtered["cpt"].unique()) == {"99213", "J0585"}
+        assert len(filtered) == 4  # 2 codes * cash/gross
+
+    def test_filter_by_hcpcs_parsed_concept_code(self, normalizer):
+        """Test filter drops unrelated parsed rows including padded codes."""
+        df = pd.DataFrame(
+            {
+                "vocabulary_id": ["cpt", "cpt", "hcpcs"],
+                "concept_code": ["099213", "99214", "J0585"],
+                "gross": [100.0, 200.0, 300.0],
+                "cash": [80.0, 160.0, 240.0],
+            }
+        )
+        filtered = normalizer.filter_by_hcpcs(df, ["99213"])
+        assert list(filtered["concept_code"]) == ["099213"]
+
+    def test_normalize_code_filter_drops_unrelated(self):
+        """Test code_filter on the normalizer discards other concept codes."""
+        vocab_df = pd.DataFrame({"concept_code": ["99213", "99214", "J0585"]})
+        normalizer = CPTNormalizer(concept_df=vocab_df, code_filter=["99213"])
+        df = pd.DataFrame(
+            {
+                "vocabulary_id": ["cpt", "cpt", "hcpcs"],
+                "concept_code": ["99213", "99214", "J0585"],
+                "gross": [100.0, 200.0, 300.0],
+                "cash": [80.0, 160.0, 240.0],
+            }
+        )
+        result = normalizer.normalize(df)
+        assert set(result["cpt"].unique()) == {"99213"}
+
+    def test_filter_by_hcpcs_empty(self, normalizer):
+        """Test filter is a no-op for empty codes or empty frames."""
+        df = pd.DataFrame(
+            {
+                "vocabulary_id": ["cpt"],
+                "concept_code": ["99213"],
+                "gross": [100.0],
+                "cash": [80.0],
+            }
+        )
+        result = normalizer.normalize(df)
+        assert len(normalizer.filter_by_hcpcs(result, [])) == len(result)
+        empty = pd.DataFrame(columns=["cpt", "type", "price"])
+        assert normalizer.filter_by_hcpcs(empty, ["99213"]).empty

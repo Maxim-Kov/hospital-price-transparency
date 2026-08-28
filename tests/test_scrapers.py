@@ -2,9 +2,10 @@
 
 from unittest.mock import MagicMock
 
+import pandas as pd
 import pytest
 
-from src.config import ScraperConfig
+from src.config import ScraperConfig, get_output_path
 from src.models import DataFormat, HospitalConfig
 from src.normalizers import CPTNormalizer
 from src.scrapers.cms_csv_scraper import CMSStandardCSVScraper
@@ -25,6 +26,7 @@ def mock_normalizer():
     normalizer = MagicMock(spec=CPTNormalizer)
     # Make normalize return input unchanged for testing
     normalizer.normalize.side_effect = lambda df, **kwargs: df
+    normalizer.filter_by_hcpcs.side_effect = CPTNormalizer.filter_by_hcpcs
     return normalizer
 
 
@@ -289,6 +291,52 @@ Extended Visit,99214,CPT,,,150.00,120.00,
         # The parser should find CPT codes
         assert any(df["concept_code"] == "99213")
 
+    def test_parse_discards_unrelated_hcpcs_rows(
+        self, csv_hospital_config, mock_http_client, mock_normalizer
+    ):
+        """Parse-time --hcpcs filter drops other codes on the same and other rows."""
+        config = ScraperConfig(hcpcs_codes=["99213"])
+        scraper = CMSStandardCSVScraper(
+            hospital_config=csv_hospital_config,
+            scraper_config=config,
+            http_client=mock_http_client,
+            normalizer=mock_normalizer,
+        )
+
+        csv_data = """Hospital Name,Test CSV Hospital,,,,,,
+Hospital Address,123 Test St,,,,,,
+description,code|1,code|1|type,code|2,code|2|type,standard_charge|gross,standard_charge|discounted_cash,notes
+Office Visit,99213,CPT,G0001,HCPCS,100.00,80.00,
+Extended Visit,99214,CPT,,,150.00,120.00,
+"""
+
+        df = scraper.parse_data(csv_data)
+        assert set(df["concept_code"].unique()) == {"99213"}
+
+    def test_hcpcs_prefilter_skips_nonmatching_rows(
+        self, csv_hospital_config, mock_http_client, mock_normalizer
+    ):
+        """Vectorized prefilter keeps padded and secondary-column matches only."""
+        config = ScraperConfig(hcpcs_codes=["99213"])
+        scraper = CMSStandardCSVScraper(
+            hospital_config=csv_hospital_config,
+            scraper_config=config,
+            http_client=mock_http_client,
+            normalizer=mock_normalizer,
+        )
+        df = pd.DataFrame(
+            {
+                "code|1": ["99214", "099213", "G0001"],
+                "code|1|type": ["CPT", "CPT", "HCPCS"],
+                "code|2": ["", "G0001", "99213"],
+                "code|2|type": ["", "HCPCS", "CPT"],
+                "standard_charge|gross": ["1", "2", "3"],
+            }
+        )
+        filtered = scraper._filter_df_to_hcpcs(df)
+        assert list(filtered["code|1"]) == ["099213", "G0001"]
+        assert list(filtered["code|2"]) == ["G0001", "99213"]
+
     def test_parse_tall_payer_rows(
         self, csv_hospital_config, scraper_config, mock_http_client, mock_normalizer
     ):
@@ -477,3 +525,103 @@ class TestGetScraper:
         )
 
         assert scraper is None
+
+
+class TestHcpcsFilter:
+    """Tests for --hcpcs output path and post-parse filtering."""
+
+    def test_output_path_full_scrape(self, json_hospital_config, tmp_path):
+        config = ScraperConfig(project_root=tmp_path, data_dir=tmp_path / "data")
+        path = get_output_path(config, json_hospital_config)
+        assert path == tmp_path / "data" / "TN" / "340001.jsonl"
+
+    def test_output_path_hcpcs_filter_does_not_clobber_full_snapshot(
+        self, json_hospital_config, tmp_path
+    ):
+        config = ScraperConfig(
+            project_root=tmp_path,
+            data_dir=tmp_path / "data",
+            hcpcs_codes=["99213", "J0585"],
+        )
+        path = get_output_path(config, json_hospital_config)
+        assert path == tmp_path / "data" / "hcpcs" / "99213_J0585" / "TN" / "340001.jsonl"
+
+    def test_normalize_applies_hcpcs_filter(
+        self, json_hospital_config, mock_http_client
+    ):
+        config = ScraperConfig(hcpcs_codes=["99213"])
+        normalizer = CPTNormalizer(concept_df=None)
+        scraper = CMSStandardJSONScraper(
+            hospital_config=json_hospital_config,
+            scraper_config=config,
+            http_client=mock_http_client,
+            normalizer=normalizer,
+        )
+
+        df = pd.DataFrame(
+            {
+                "vocabulary_id": ["cpt", "cpt"],
+                "concept_code": ["99213", "99214"],
+                "gross": [100.0, 200.0],
+                "cash": [80.0, 160.0],
+            }
+        )
+        result = scraper.normalize(df)
+        assert set(result["cpt"].unique()) == {"99213"}
+        assert len(result) == 2
+
+    def test_parse_discards_unrelated_hcpcs_rows(
+        self, json_hospital_config, mock_http_client, mock_normalizer
+    ):
+        """Parse-time --hcpcs filter drops other codes and their payer nets."""
+        config = ScraperConfig(hcpcs_codes=["99213"])
+        scraper = CMSStandardJSONScraper(
+            hospital_config=json_hospital_config,
+            scraper_config=config,
+            http_client=mock_http_client,
+            normalizer=mock_normalizer,
+        )
+
+        json_data = {
+            "standard_charge_information": [
+                {
+                    "code_information": [{"type": "CPT", "code": "99213"}],
+                    "standard_charges": [
+                        {
+                            "gross_charge": 100,
+                            "discounted_cash": 80,
+                            "payers_information": [
+                                {
+                                    "payer_name": "AETNA",
+                                    "plan_name": "COMMERCIAL",
+                                    "standard_charge_dollar": 26.79,
+                                }
+                            ],
+                        }
+                    ],
+                },
+                {
+                    "code_information": [{"type": "CPT", "code": "99214"}],
+                    "standard_charges": [
+                        {
+                            "gross_charge": 200,
+                            "discounted_cash": 160,
+                            "payers_information": [
+                                {
+                                    "payer_name": "AETNA",
+                                    "plan_name": "COMMERCIAL",
+                                    "standard_charge_dollar": 50.0,
+                                }
+                            ],
+                        }
+                    ],
+                },
+            ]
+        }
+
+        df = scraper.parse_data(json_data)
+        assert set(df["concept_code"].unique()) == {"99213"}
+        assert df["gross"].dropna().tolist() == [100]
+        nets = df[df["net"].notna()]
+        assert len(nets) == 1
+        assert nets.iloc[0]["net"] == 26.79

@@ -13,6 +13,10 @@ ignore/
 *_raw.csv
 data/**/*_raw.csv
 
+# HCPCS-filtered scrape output and per-run status
+data/hcpcs/
+status/
+
 # Python
 __pycache__/
 *.py[cod]

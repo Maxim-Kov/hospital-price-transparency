@@ -368,6 +368,8 @@ class CMSStandardJSONScraper(BaseScraper):
         """Build overall + net records from one charge item."""
         records: list[dict] = []
         codes = self._extract_codes(item)
+        if self.scraper_config.hcpcs_codes:
+            codes = [(code, vocab_id) for code, vocab_id in codes if self._hcpcs_code_wanted(code)]
         if not codes:
             return records
 

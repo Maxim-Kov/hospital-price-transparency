@@ -1,11 +1,13 @@
 # Hospital Price Transparency
 
-[![URL Validation](https://github.com/nathansutton/hospital-price-transparency/actions/workflows/scrape.yml/badge.svg)](https://github.com/nathansutton/hospital-price-transparency/actions/workflows/scrape.yml)
-[![Tests](https://github.com/nathansutton/hospital-price-transparency/actions/workflows/test.yml/badge.svg)](https://github.com/nathansutton/hospital-price-transparency/actions/workflows/test.yml)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[URL Validation](https://github.com/nathansutton/hospital-price-transparency/actions/workflows/scrape.yml)
+[Tests](https://github.com/nathansutton/hospital-price-transparency/actions/workflows/test.yml)
+[Python 3.11+](https://www.python.org/downloads/)
+[License: MIT](https://opensource.org/licenses/MIT)
 
-Self-healing scraper for hospital price transparency data. Collects and archives standardized pricing information from 5,000+ hospitals across all 50 US states.
+Self-healing scraper for hospital price transparency data. Collects and archives standardized pricing information from 5,000+ hospitals across all 50 US states. 
+
+This version collects net rates by payer/plan in addition to hospital gross and cash prices. That lets users compare what each payer (Aetna, UHC, etc.) and plan type (commercial, Medicare Advantage, Medicaid, …) is contracted to pay for an item. There is also an individual HCPCS code look up, allowing users to see the price of an individual intervention across geographies.
 
 ## The Problem: Disappearing Data
 
@@ -21,16 +23,19 @@ Hospital price transparency files are required by law, but they're ephemeral. Ho
 This project uses [git-scraping](https://simonwillison.net/2020/Oct/9/git-scraping/)—a technique pioneered by Simon Willison—to create a living archive of hospital pricing data. By committing scraped data to git on a regular schedule, we get:
 
 **Version Control as a Database**
+
 - Every commit is a snapshot of hospital prices at a point in time
 - `git log data/VT/470011.jsonl` shows the complete price history for a hospital
 - `git diff` reveals exactly what changed between any two dates
 
 **Slowly Changing Dimension (Type 2)**
+
 - New prices are captured without destroying old data
 - The git history preserves the full timeline
 - You can reconstruct prices as of any historical date using `git checkout`
 
 **Free, Distributed Storage**
+
 - GitHub hosts the archive at no cost
 - Anyone can fork and maintain their own copy
 - Data survives even if hospitals take down their files
@@ -100,11 +105,13 @@ Each hospital's data is stored as a JSONL file in `data/{STATE}/{CCN}.jsonl`:
 {"cpt": "99214", "type": "gross", "price": 210.00}
 ```
 
-| Field | Description |
-|-------|-------------|
-| `cpt` | CPT/HCPCS procedure code (5 alphanumeric characters) |
-| `type` | Price type: `cash` (self-pay discounted) or `gross` (chargemaster) |
-| `price` | Price in USD |
+
+| Field   | Description                                                        |
+| ------- | ------------------------------------------------------------------ |
+| `cpt`   | CPT/HCPCS procedure code (5 alphanumeric characters)               |
+| `type`  | Price type: `cash` (self-pay discounted) or `gross` (chargemaster) |
+| `price` | Price in USD                                                       |
+
 
 ## CLI Usage
 
@@ -117,6 +124,13 @@ uv run python scripts/scrape.py --state NC
 
 # Scrape specific hospital by CCN
 uv run python scripts/scrape.py --ccn 340001
+
+# Keep only one CPT/HCPCS code (still downloads each full file, then discards other rows)
+uv run python scripts/scrape.py --hcpcs 99213
+
+# Combine with state or hospital filters
+uv run python scripts/scrape.py --state NC --hcpcs 99213
+uv run python scripts/scrape.py --ccn 340001 --hcpcs 99213 --hcpcs J0585
 
 # Validate URLs only (no scraping)
 uv run python scripts/scrape.py --validate-only
@@ -168,14 +182,16 @@ The scraper itself can be run manually or on your own schedule to capture full p
 
 ## Coverage
 
-| Region | States |
-|--------|--------|
-| Northeast | CT, MA, ME, NH, NJ, NY, PA, RI, VT |
+
+| Region    | States                                         |
+| --------- | ---------------------------------------------- |
+| Northeast | CT, MA, ME, NH, NJ, NY, PA, RI, VT             |
 | Southeast | AL, DE, FL, GA, KY, MD, MS, NC, SC, TN, VA, WV |
-| Midwest | IA, IL, IN, KS, MI, MN, MO, ND, NE, OH, SD, WI |
-| Southwest | AZ, NM, OK, TX |
-| West | AK, CA, CO, HI, ID, MT, NV, OR, UT, WA, WY |
-| **Total** | **50 states, 5,000+ hospitals** |
+| Midwest   | IA, IL, IN, KS, MI, MN, MO, ND, NE, OH, SD, WI |
+| Southwest | AZ, NM, OK, TX                                 |
+| West      | AK, CA, CO, HI, ID, MT, NV, OR, UT, WA, WY     |
+| **Total** | **50 states, 5,000+ hospitals**                |
+
 
 ## Development
 
@@ -210,6 +226,7 @@ This data enables investigation of healthcare pricing economics:
 > — [NYT, August 2021](https://www.nytimes.com/interactive/2021/08/22/upshot/hospital-prices.html)
 
 **Open questions:**
+
 - How often do cash prices beat negotiated insurance rates?
 - What is the variance in prices for common procedures across hospitals?
 - How have prices changed since transparency requirements took effect?

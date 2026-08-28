@@ -11,6 +11,7 @@ from src.models import (
     ScrapeResult,
     ScrapeStats,
     ScrapeStatus,
+    parse_hcpcs_codes,
 )
 
 
@@ -270,3 +271,28 @@ class TestScrapeStats:
         assert "10/13" in summary
         assert "50,000" in summary
         assert "120.5s" in summary
+
+
+class TestParseHcpcsCodes:
+    """Tests for --hcpcs CLI code parsing."""
+
+    def test_empty(self):
+        assert parse_hcpcs_codes(None) == []
+        assert parse_hcpcs_codes(()) == []
+        assert parse_hcpcs_codes([]) == []
+
+    def test_single_code(self):
+        assert parse_hcpcs_codes(("99213",)) == ["99213"]
+
+    def test_uppercases(self):
+        assert parse_hcpcs_codes(("j0585",)) == ["J0585"]
+
+    def test_comma_separated_and_repeatable(self):
+        assert parse_hcpcs_codes(("99213,j0585", "99214")) == ["99213", "J0585", "99214"]
+
+    def test_dedupes_preserving_order(self):
+        assert parse_hcpcs_codes(("99213", "99213", "J0585")) == ["99213", "J0585"]
+
+    def test_invalid_code(self):
+        with pytest.raises(ValueError, match="Invalid CPT/HCPCS"):
+            parse_hcpcs_codes(("9921",))

@@ -56,6 +56,23 @@ class BaseScraper(ABC):
             hospital_name=hospital_config.hospital,
         )
 
+    def _hcpcs_wanted_set(self) -> set[str] | None:
+        """Cached uppercase --hcpcs codes, or None if no filter is set."""
+        if not hasattr(self, "_hcpcs_wanted_cache"):
+            codes = self.scraper_config.hcpcs_codes
+            self._hcpcs_wanted_cache: set[str] | None = (
+                {c.upper() for c in codes} if codes else None
+            )
+        return self._hcpcs_wanted_cache
+
+    def _hcpcs_code_wanted(self, code: str) -> bool:
+        """True if this procedure code should be kept (or if no --hcpcs filter)."""
+        wanted = self._hcpcs_wanted_set()
+        if wanted is None:
+            return True
+        cleaned = CPTNormalizer.strip_leading_zero(str(code).strip()).upper()
+        return cleaned in wanted
+
     @abstractmethod
     def fetch_data(self) -> bytes | str | dict | Path:
         """Fetch raw data from the hospital's price file URL.
@@ -160,8 +177,21 @@ class BaseScraper(ABC):
         Returns:
             Normalized DataFrame ready for output
         """
+        codes = self.scraper_config.hcpcs_codes
+        if codes:
+            before = len(df)
+            df = self.normalizer.filter_by_hcpcs(df, codes)
+            self.logger.debug(
+                "hcpcs_filter_parsed",
+                codes=codes,
+                before=before,
+                after=len(df),
+            )
         df = self._apply_payer_normalization(df)
-        return self.normalizer.normalize(df)
+        result = self.normalizer.normalize(df)
+        if codes:
+            result = self.normalizer.filter_by_hcpcs(result, codes)
+        return result
 
     def _find_local_raw_file(self) -> Path | None:
         """Check if a locally downloaded raw file exists.
@@ -319,6 +349,11 @@ class BaseScraper(ABC):
                         continue
                     kwargs["payer"] = str(payer)
                     kwargs["plan"] = str(plan)
+
+                if self.scraper_config.hcpcs_codes:
+                    wanted = {c.upper() for c in self.scraper_config.hcpcs_codes}
+                    if str(kwargs["cpt"]).upper() not in wanted:
+                        continue
 
                 record = PriceRecord(**kwargs)
                 valid_records.append(record.model_dump())

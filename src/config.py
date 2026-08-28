@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 
 import pandas as pd
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from .models import DataFormat, HospitalConfig
 from .utils.logger import get_logger
@@ -93,6 +93,18 @@ class ScraperConfig(BaseModel):
     # Logging settings
     log_level: str = Field(default="INFO", description="Logging level")
     json_logs: bool = Field(default=False, description="Use JSON log format")
+
+    # Optional post-parse filter; when set, output is written under data/hcpcs/
+    hcpcs_codes: list[str] = Field(
+        default_factory=list,
+        description="If set, keep only these CPT/HCPCS codes in scrape output",
+    )
+
+    @field_validator("hcpcs_codes")
+    @classmethod
+    def uppercase_hcpcs_codes(cls, v: list[str]) -> list[str]:
+        """Normalize filter codes to uppercase."""
+        return [c.strip().upper() for c in v if c and str(c).strip()]
 
     def model_post_init(self, __context: object) -> None:
         """Set default paths relative to project root."""
@@ -350,7 +362,9 @@ def load_concept_codes(config: ScraperConfig) -> pd.DataFrame:
 def get_output_path(config: ScraperConfig, hospital: HospitalConfig) -> Path:
     """Get the output path for a hospital's JSONL file.
 
-    Uses state-organized directory structure: data/{STATE}/{CCN}.jsonl
+    Full scrapes use data/{STATE}/{CCN}.jsonl.
+    HCPCS-filtered scrapes use data/hcpcs/{CODES}/{STATE}/{CCN}.jsonl so
+    they do not overwrite the full-hospital git archive.
 
     Args:
         config: Scraper configuration
@@ -360,14 +374,18 @@ def get_output_path(config: ScraperConfig, hospital: HospitalConfig) -> Path:
         Path to the output JSONL file
     """
     assert config.data_dir is not None  # Set in model_post_init
+    data_dir = config.data_dir
+    if config.hcpcs_codes:
+        data_dir = data_dir / "hcpcs" / "_".join(config.hcpcs_codes)
+
     if hospital.state and hospital.ccn:
-        state_dir = config.data_dir / hospital.state.upper()
+        state_dir = data_dir / hospital.state.upper()
         state_dir.mkdir(parents=True, exist_ok=True)
         return state_dir / f"{hospital.ccn}.jsonl"
 
     # Fallback for hospitals without CCN (shouldn't happen with new system)
-    config.data_dir.mkdir(parents=True, exist_ok=True)
-    return config.data_dir / f"{hospital.identifier}.jsonl"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    return data_dir / f"{hospital.identifier}.jsonl"
 
 
 def get_data_age_days(config: ScraperConfig, hospital: HospitalConfig) -> float | None:

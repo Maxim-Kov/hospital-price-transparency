@@ -14,6 +14,13 @@ Usage:
     # Scrape specific hospital by CCN
     python scripts/scrape.py --ccn 470011
 
+    # Keep only one CPT/HCPCS code (still downloads full files)
+    python scripts/scrape.py --hcpcs 99213
+
+    # Combine with state or hospital filters
+    python scripts/scrape.py --state VT --hcpcs 99213
+    python scripts/scrape.py --ccn 470011 --hcpcs J0585 --hcpcs 99213
+
     # Dry run (fetch and parse but don't save)
     python scripts/scrape.py --state VT --dry-run
 
@@ -34,7 +41,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.config import ScraperConfig, get_data_age_days, load_hospital_configs_from_urls
-from src.models import HospitalConfig, ScrapeResult, ScrapeStats, ScrapeStatus
+from src.models import HospitalConfig, ScrapeResult, ScrapeStats, ScrapeStatus, parse_hcpcs_codes
 from src.normalizers import CPTNormalizer
 from src.scrapers import get_scraper
 from src.utils.http_client import RetryHTTPClient
@@ -140,7 +147,10 @@ def _worker_process(
         # Load normalizer for this process
         concept_df = pd.read_csv(concept_df_path, compression="gzip", sep="\t")
         concept_df = concept_df[concept_df["vocabulary_id"].isin(["CPT4", "HCPCS"])]
-        normalizer = CPTNormalizer(concept_df[["concept_code"]])
+        normalizer = CPTNormalizer(
+            concept_df[["concept_code"]],
+            code_filter=config.hcpcs_codes or None,
+        )
 
         if validate_only:
             # Just check URL accessibility
@@ -291,6 +301,15 @@ def _process_hospital_with_timeout(
     "--state", "-s", default=None, help="Scrape only hospitals from this state (e.g., VT)"
 )
 @click.option("--ccn", default=None, help="Scrape only the hospital with this CCN")
+@click.option(
+    "--hcpcs",
+    multiple=True,
+    help=(
+        "Keep only these CPT/HCPCS codes after parsing. Repeatable or comma-separated "
+        "(e.g. --hcpcs 99213 --hcpcs J0585). Combines with --state and --ccn. "
+        "Writes to data/hcpcs/{CODE}/ so full hospital snapshots are not overwritten."
+    ),
+)
 @click.option("--validate-only", is_flag=True, help="Only validate URLs, don't scrape")
 @click.option("--dry-run", is_flag=True, help="Fetch and parse but don't save files")
 @click.option("-v", "--verbose", is_flag=True, help="Enable verbose logging")
@@ -318,6 +337,7 @@ def _process_hospital_with_timeout(
 def main(
     state: str | None,
     ccn: str | None,
+    hcpcs: tuple[str, ...],
     validate_only: bool,
     dry_run: bool,
     verbose: bool,
@@ -331,10 +351,16 @@ def main(
     Processes hospitals from dim/urls/*.json files created by the
     browser-based hospitalpricingfiles.org scraper.
     """
+    try:
+        hcpcs_codes = parse_hcpcs_codes(hcpcs)
+    except ValueError as e:
+        raise click.BadParameter(str(e), param_hint="--hcpcs") from e
+
     # Set up configuration
     config = ScraperConfig(
         log_level="DEBUG" if verbose else "INFO",
         json_logs=json_logs,
+        hcpcs_codes=hcpcs_codes,
     )
 
     # Set up logging
@@ -349,6 +375,7 @@ def main(
         version="2.1.0",
         state_filter=state,
         ccn_filter=ccn,
+        hcpcs_filter=hcpcs_codes or None,
         validate_only=validate_only,
         dry_run=dry_run,
         max_age_days=max_age_days,
@@ -375,6 +402,11 @@ def main(
             sys.exit(1)
 
         click.echo(f"Loaded {len(hospitals)} hospitals from URL files")
+        if hcpcs_codes:
+            click.echo(
+                f"HCPCS filter: {', '.join(hcpcs_codes)} "
+                f"(output: data/hcpcs/{'_'.join(hcpcs_codes)}/)"
+            )
 
     except Exception as e:
         logger.exception("config_load_failed", error=str(e))

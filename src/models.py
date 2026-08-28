@@ -38,8 +38,43 @@ class PriceType(str, Enum):
     NET = "net"
 
 
-# CPT code pattern: 5 characters, alphanumeric (e.g., 99213, 0001A)
+# CPT/HCPCS code pattern: 5 characters, alphanumeric (e.g., 99213, J0585)
 CPT_PATTERN = re.compile(r"^[0-9A-Z]{5}$")
+
+
+def parse_hcpcs_codes(values: list[str] | tuple[str, ...] | None) -> list[str]:
+    """Parse CLI CPT/HCPCS codes: split commas, uppercase, validate, dedupe.
+
+    Args:
+        values: Raw --hcpcs arguments (repeatable and/or comma-separated)
+
+    Returns:
+        Deduped uppercase codes in first-seen order
+
+    Raises:
+        ValueError: If a token is not a 5-character alphanumeric code
+    """
+    if not values:
+        return []
+
+    seen: set[str] = set()
+    codes: list[str] = []
+    for item in values:
+        if item is None:
+            continue
+        for part in str(item).split(","):
+            raw = part.strip()
+            if not raw:
+                continue
+            code = raw.upper()
+            if not CPT_PATTERN.match(code):
+                raise ValueError(
+                    f"Invalid CPT/HCPCS code '{raw}': must be 5 alphanumeric characters"
+                )
+            if code not in seen:
+                seen.add(code)
+                codes.append(code)
+    return codes
 
 
 class HospitalConfig(BaseModel):

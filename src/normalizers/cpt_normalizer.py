@@ -30,17 +30,25 @@ class CPTNormalizer:
     # Pattern for valid CPT codes (5 alphanumeric characters)
     CPT_PATTERN = re.compile(r"^[0-9A-Z]{5}$")
 
-    def __init__(self, concept_df: pd.DataFrame | None = None):
+    def __init__(
+        self,
+        concept_df: pd.DataFrame | None = None,
+        code_filter: list[str] | None = None,
+    ):
         """Initialize the normalizer.
 
         Args:
             concept_df: DataFrame with 'concept_code' column containing valid CPT4 codes.
                        If None, validation against Athena vocabulary is skipped.
+            code_filter: If set, keep only these CPT/HCPCS codes.
         """
         self.concept_codes: set[str] = set()
         if concept_df is not None:
             self.concept_codes = set(concept_df["concept_code"].astype(str).str.strip())
             logger.info("loaded_concept_codes", count=len(self.concept_codes))
+        self.code_filter: set[str] = {
+            c.strip().upper() for c in (code_filter or []) if c and str(c).strip()
+        }
 
     @classmethod
     def from_file(cls, concept_path: Path) -> "CPTNormalizer":
@@ -120,6 +128,17 @@ class CPTNormalizer:
             if filtered_count > 0:
                 logger.debug("filtered_invalid_codes", count=filtered_count)
 
+        if self.code_filter:
+            before = len(df)
+            df = df[df["concept_code"].astype(str).str.upper().isin(self.code_filter)]
+            dropped = before - len(df)
+            if dropped > 0:
+                logger.debug(
+                    "filtered_unrelated_hcpcs",
+                    dropped=dropped,
+                    kept=sorted(self.code_filter),
+                )
+
         return df
 
     def _finalize(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -140,6 +159,32 @@ class CPTNormalizer:
             sort_cols.extend(["payer", "plan"])
         df = df.sort_values(sort_cols)
         return df.reset_index(drop=True)
+
+    @staticmethod
+    def filter_by_hcpcs(df: pd.DataFrame, codes: list[str]) -> pd.DataFrame:
+        """Drop rows whose procedure code is not in the given CPT/HCPCS set.
+
+        Works on parsed frames (`concept_code`) and normalized frames (`cpt`).
+        Leading-zero-padded codes are treated as the 5-character form.
+        """
+        if not codes or df.empty:
+            return df
+        col = (
+            "concept_code"
+            if "concept_code" in df.columns
+            else ("cpt" if "cpt" in df.columns else None)
+        )
+        if col is None:
+            return df
+        wanted = {c.strip().upper() for c in codes}
+        cleaned = (
+            df[col]
+            .astype(str)
+            .map(CPTNormalizer.strip_leading_zero)
+            .str.strip()
+            .str.upper()
+        )
+        return df[cleaned.isin(wanted)].reset_index(drop=True)
 
     def normalize(
         self,
