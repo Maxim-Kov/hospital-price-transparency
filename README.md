@@ -18,6 +18,8 @@ Hospital price transparency files are required by law, but they're ephemeral. Ho
 - Hold hospitals accountable to their published rates
 - Research the effects of price transparency regulations
 
+
+
 ## The Solution: Git as a Time Machine
 
 This project uses [git-scraping](https://simonwillison.net/2020/Oct/9/git-scraping/)—a technique pioneered by Simon Willison—to create a living archive of hospital pricing data. By committing scraped data to git on a regular schedule, we get:
@@ -40,6 +42,8 @@ This project uses [git-scraping](https://simonwillison.net/2020/Oct/9/git-scrapi
 - Anyone can fork and maintain their own copy
 - Data survives even if hospitals take down their files
 
+
+
 ### Example: Tracking Price Changes
 
 ```bash
@@ -52,6 +56,8 @@ git diff abc123..def456 data/VT/470011.jsonl
 # Get prices as they were on a specific date
 git checkout $(git rev-list -n 1 --before="2025-06-01" HEAD) -- data/VT/470011.jsonl
 ```
+
+
 
 ## Self-Healing Infrastructure
 
@@ -94,6 +100,8 @@ uv run python scripts/scrape.py --state VT
 uv run python scripts/scrape.py
 ```
 
+
+
 ## Data Format
 
 Each hospital's data is stored as a JSONL file in `data/{STATE}/{CCN}.jsonl`:
@@ -113,6 +121,8 @@ Each hospital's data is stored as a JSONL file in `data/{STATE}/{CCN}.jsonl`:
 | `price` | Price in USD                                                       |
 
 
+
+
 ## CLI Usage
 
 ```bash
@@ -126,7 +136,13 @@ uv run python scripts/scrape.py --state NC
 uv run python scripts/scrape.py --ccn 340001
 
 # Keep only one CPT/HCPCS code (still downloads each full file, then discards other rows)
-uv run python scripts/scrape.py --hcpcs 99213
+uv run python scripts/scrape.py --hcpcs J1303
+
+# Filter from existing full archives (no download; one worker per state by default)
+uv run python scripts/scrape.py --from-existing --hcpcs J1303
+uv run python scripts/scrape.py --from-existing --hcpcs J1303 -p 8
+uv run python scripts/scrape.py --from-existing --state VT --hcpcs J1303
+uv run python scripts/scrape.py --from-existing --ccn 470011 --hcpcs J1303
 
 # Combine with state or hospital filters
 uv run python scripts/scrape.py --state NC --hcpcs 99213
@@ -144,6 +160,10 @@ uv run python scripts/scrape.py -v
 # Generate summary from status files
 uv run python scripts/generate_summary.py
 ```
+
+`--from-existing` requires `--hcpcs`. It reads `data/{STATE}/{CCN}.jsonl`, writes matching rows to `data/outputs/{CODE}/`, and still emits the usual price-stats CSV. Hospitals with no on-disk archive are skipped. By default it uses **one worker per state**; override with `-p N`.
+
+Every scrape (state, hospital/`--ccn`, or `--hcpcs`) also writes **one** price-distribution CSV for the run. Each row is a code × state × price type with: `drug_name` (OHDSI Athena name when available), `hcpcs_code`, `state`, `type`, `n`, `n_hospitals`, `min`, `p25`, `median`, `mean`, `p75`, `max`. Filtered hospital JSONL and the stats CSV both land in `data/outputs/` (for example `data/outputs/J1303/VT/470011.jsonl` and `data/outputs/hcpcs_J1303_price_stats.csv`). A short preview is printed at the end of the run.
 
 ## Architecture
 
@@ -170,6 +190,8 @@ hospital-price-transparency/
 └── tests/                 # Unit tests
 ```
 
+
+
 ## How Git-Scraping Works
 
 1. **Daily Schedule**: GitHub Actions runs the validator daily at 8 AM UTC
@@ -193,6 +215,8 @@ The scraper itself can be run manually or on your own schedule to capture full p
 | **Total** | **50 states, 5,000+ hospitals**                |
 
 
+
+
 ## Development
 
 ```bash
@@ -211,6 +235,8 @@ uv run ruff check src/
 # Format code
 uv run ruff format src/
 ```
+
+
 
 ## Ontology
 
@@ -232,12 +258,16 @@ This data enables investigation of healthcare pricing economics:
 - How have prices changed since transparency requirements took effect?
 - Which hospitals have raised or lowered prices since the mandate?
 
+
+
 ## Related Projects
 
 - [Simon Willison's Git Scraping](https://simonwillison.net/2020/Oct/9/git-scraping/) - The technique this project uses
 - [Turquoise Health](https://turquoise.health/) - Consumer-friendly price lookup tool
 - [OHDSI Athena](https://athena.ohdsi.org/) - Healthcare vocabulary browser
 - [Hospital Chargemaster](https://github.com/vsoch/hospital-chargemaster) - Alternative scraping approach
+
+
 
 ## License
 

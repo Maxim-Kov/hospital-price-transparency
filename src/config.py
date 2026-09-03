@@ -94,7 +94,7 @@ class ScraperConfig(BaseModel):
     log_level: str = Field(default="INFO", description="Logging level")
     json_logs: bool = Field(default=False, description="Use JSON log format")
 
-    # Optional post-parse filter; when set, output is written under data/hcpcs/
+    # Optional post-parse filter; when set, output is written under data/outputs/
     hcpcs_codes: list[str] = Field(
         default_factory=list,
         description="If set, keep only these CPT/HCPCS codes in scrape output",
@@ -125,6 +125,12 @@ class ScraperConfig(BaseModel):
     def status_dir(self) -> Path:
         """Path to the directory for per-state status files."""
         return self.project_root / "status"
+
+    @property
+    def outputs_dir(self) -> Path:
+        """Path for search/filter outputs (HCPCS extracts and price stats)."""
+        assert self.data_dir is not None  # Set in model_post_init
+        return self.data_dir / "outputs"
 
     @property
     def concept_csv_path(self) -> Path:
@@ -363,7 +369,7 @@ def get_output_path(config: ScraperConfig, hospital: HospitalConfig) -> Path:
     """Get the output path for a hospital's JSONL file.
 
     Full scrapes use data/{STATE}/{CCN}.jsonl.
-    HCPCS-filtered scrapes use data/hcpcs/{CODES}/{STATE}/{CCN}.jsonl so
+    HCPCS-filtered searches use data/outputs/{CODES}/{STATE}/{CCN}.jsonl so
     they do not overwrite the full-hospital git archive.
 
     Args:
@@ -374,9 +380,10 @@ def get_output_path(config: ScraperConfig, hospital: HospitalConfig) -> Path:
         Path to the output JSONL file
     """
     assert config.data_dir is not None  # Set in model_post_init
-    data_dir = config.data_dir
     if config.hcpcs_codes:
-        data_dir = data_dir / "hcpcs" / "_".join(config.hcpcs_codes)
+        data_dir = config.outputs_dir / "_".join(config.hcpcs_codes)
+    else:
+        data_dir = config.data_dir
 
     if hospital.state and hospital.ccn:
         state_dir = data_dir / hospital.state.upper()
@@ -386,6 +393,41 @@ def get_output_path(config: ScraperConfig, hospital: HospitalConfig) -> Path:
     # Fallback for hospitals without CCN (shouldn't happen with new system)
     data_dir.mkdir(parents=True, exist_ok=True)
     return data_dir / f"{hospital.identifier}.jsonl"
+
+
+def get_full_archive_path(config: ScraperConfig, hospital: HospitalConfig) -> Path:
+    """Full-hospital archive path data/{STATE}/{CCN}.jsonl.
+
+    Ignores --hcpcs so offline filters can read the git-scraped snapshot.
+    Does not create directories.
+    """
+    assert config.data_dir is not None  # Set in model_post_init
+    if hospital.state and hospital.ccn:
+        return config.data_dir / hospital.state.upper() / f"{hospital.ccn}.jsonl"
+    return config.data_dir / f"{hospital.identifier}.jsonl"
+
+
+def get_price_stats_path(
+    config: ScraperConfig,
+    state_filter: str | None = None,
+    ccn_filter: str | None = None,
+) -> Path:
+    """CSV path for per-run CPT/HCPCS price distribution stats.
+
+    Written under data/outputs/ so search results stay together.
+    """
+    outputs_dir = config.outputs_dir
+    outputs_dir.mkdir(parents=True, exist_ok=True)
+
+    parts: list[str] = []
+    if state_filter:
+        parts.append(state_filter.strip().upper())
+    if ccn_filter:
+        parts.append(ccn_filter.strip().upper())
+    if config.hcpcs_codes:
+        parts.append("hcpcs_" + "_".join(config.hcpcs_codes))
+    stem = "_".join(parts) if parts else "all"
+    return outputs_dir / f"{stem}_price_stats.csv"
 
 
 def get_data_age_days(config: ScraperConfig, hospital: HospitalConfig) -> float | None:

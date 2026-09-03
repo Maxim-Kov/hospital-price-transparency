@@ -13,7 +13,9 @@ ignore/
 *_raw.csv
 data/**/*_raw.csv
 
-# HCPCS-filtered scrape output and per-run status
+# Search/filter outputs (HCPCS extracts + price stats)
+data/outputs/
+# Legacy HCPCS-filtered path (kept ignored if present)
 data/hcpcs/
 status/
 

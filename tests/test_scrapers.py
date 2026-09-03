@@ -544,7 +544,7 @@ class TestHcpcsFilter:
             hcpcs_codes=["99213", "J0585"],
         )
         path = get_output_path(config, json_hospital_config)
-        assert path == tmp_path / "data" / "hcpcs" / "99213_J0585" / "TN" / "340001.jsonl"
+        assert path == tmp_path / "data" / "outputs" / "99213_J0585" / "TN" / "340001.jsonl"
 
     def test_normalize_applies_hcpcs_filter(
         self, json_hospital_config, mock_http_client

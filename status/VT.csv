@@ -1,14 +1,14 @@
 date,ccn,hospital,status,file_url,records,error_type,error_message,duration
-2026-01-28T19:31:29.139729+00:00,470001,CENTRAL VERMONT MEDICAL CENTER,SKIPPED,https://www.cvmc.org/sites/default/files/documents/222547186_Central-Vermont-Medical-Center_standardcharges.csv,,,Data is 5.8 days old (max age: 30),
-2026-01-28T19:31:29.139739+00:00,470011,BRATTLEBORO MEMORIAL HOSPITAL,SKIPPED,https://sthpiprd.blob.core.windows.net/machine-readable-files/10714/030107300_brattleboro-memorial-hospital_standardcharges.csv,,,Data is 0.7 days old (max age: 30),
-2026-01-28T19:31:29.139744+00:00,470012,SOUTHWESTERN VERMONT MEDICAL CENTER,SKIPPED,https://svhealthcare.org/222563241_Southwestern-Vermont-Medical-Center-Inc._standardcharges.csv,,,Data is 5.8 days old (max age: 30),
-2026-01-28T19:31:29.139749+00:00,470024,NORTHWESTERN MEDICAL CENTER,SKIPPED,https://pricetransparency.blob.core.windows.net/northwesternmedical/03-0278425_Northwestern-Medical-Center_standardcharges.csv?sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2099-04-26T22:40:35Z&st=2024-04-11T14:40:35Z&spr=https&sig=V53UDZpYxrVMzk1BKj4Dvm45q%2FAztzKKQCADbpBONqo%3D,,,Data is 5.8 days old (max age: 30),
-2026-01-28T19:31:29.139755+00:00,471300,GRACE COTTAGE HOSPITAL,SKIPPED,https://secure.claraprice.net/price-transparency/5f6520a384/machine-readable,,,Data is 5.8 days old (max age: 30),
-2026-01-28T19:31:29.139759+00:00,470005,RUTLAND REGIONAL MEDICAL CENTER,FAILURE,https://www.rrmc.org/app/files/public/47f0fe40-cd79-42f2-bd09-793a36563ae6/030183483_RutlandRegionalMedicalCenter_standardcharges.csv,,PermanentHTTPError,Server returned 403,0.65
-2026-01-28T19:31:29.139764+00:00,471301,GIFFORD MEDICAL CENTER,SKIPPED,https://giffordhealthcare.org/wp-content/uploads/2025/11/030179418_gifford-medical-center_standardcharges.csv,,,Data is 5.8 days old (max age: 30),
-2026-01-28T19:31:29.139768+00:00,471302,MOUNT ASCUTNEY HOSPITAL & HEALTH CENTER,SKIPPED,https://secure.claraprice.net/price-transparency/5fcd5b479a/machine-readable,,,Data is 5.8 days old (max age: 30),
-2026-01-28T19:31:29.139773+00:00,471303,NORTHEASTERN VERMONT REGIONAL HOSPITAL,SKIPPED,https://nvrh.org/wp-content/uploads/2025/06/036013761_NORTHEASTERN-VERMONT-Regional-Hospital_standardcharges.csv,,,Data is 5.8 days old (max age: 30),
-2026-01-28T19:31:29.139777+00:00,471304,NORTH COUNTRY HOSPITAL,SKIPPED,https://northcountryhospital.org/wp-content/uploads/030185556_north-country-hospital_standardcharges.csv,,,Data is 5.8 days old (max age: 30),
-2026-01-28T19:31:29.139781+00:00,471305,COPLEY HOSPITAL,SKIPPED,https://www.copleyvt.org/030179423_Copley-Hospital_standardcharges.csv,,,Data is 5.8 days old (max age: 30),
-2026-01-28T19:31:29.139785+00:00,471306,SPRINGFIELD HOSPITAL,SKIPPED,https://secure.claraprice.net/price-transparency/XGDZ-1751991682610/machine-readable,,,Data is 5.8 days old (max age: 30),
-2026-01-28T19:31:29.139789+00:00,474001,BRATTLEBORO RETREAT,SKIPPED,https://www.brattlebororetreat.org/wp-content/uploads/2025/05/2024-2025-Price-Transparency-Disclosure.csv,,,Data is 5.8 days old (max age: 30),
+2026-09-03T03:12:40.128504+00:00,470001,CENTRAL VERMONT MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\VT\470001.jsonl,2,,,0.03
+2026-09-03T03:12:40.128504+00:00,470005,RUTLAND REGIONAL MEDICAL CENTER,SKIPPED,https://www.rrmc.org/app/files/public/47f0fe40-cd79-42f2-bd09-793a36563ae6/030183483_RutlandRegionalMedicalCenter_standardcharges.csv,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\VT\470005.jsonl,
+2026-09-03T03:12:40.128504+00:00,470011,BRATTLEBORO MEMORIAL HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\VT\470011.jsonl,10,,,0.51
+2026-09-03T03:12:40.128504+00:00,470012,SOUTHWESTERN VERMONT MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\VT\470012.jsonl,2,,,0.05
+2026-09-03T03:12:40.128504+00:00,470024,NORTHWESTERN MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\VT\470024.jsonl,,,,0.02
+2026-09-03T03:12:40.128504+00:00,471300,GRACE COTTAGE HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\VT\471300.jsonl,,,,0.05
+2026-09-03T03:12:40.128504+00:00,471301,GIFFORD MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\VT\471301.jsonl,,,,0.01
+2026-09-03T03:12:40.128504+00:00,471302,MOUNT ASCUTNEY HOSPITAL & HEALTH CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\VT\471302.jsonl,,,,0.05
+2026-09-03T03:12:40.128504+00:00,471303,NORTHEASTERN VERMONT REGIONAL HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\VT\471303.jsonl,,,,0.02
+2026-09-03T03:12:40.128504+00:00,471304,NORTH COUNTRY HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\VT\471304.jsonl,,,,0.03
+2026-09-03T03:12:40.128504+00:00,471305,COPLEY HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\VT\471305.jsonl,,,,0.02
+2026-09-03T03:12:40.128504+00:00,471306,SPRINGFIELD HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\VT\471306.jsonl,,,,0.09
+2026-09-03T03:12:40.128504+00:00,474001,BRATTLEBORO RETREAT,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\VT\474001.jsonl,,,,0.00

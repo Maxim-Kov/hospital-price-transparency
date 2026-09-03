@@ -1,46 +1,46 @@
 date,ccn,hospital,status,file_url,records,error_type,error_message,duration
-2026-01-28T19:31:29.160997+00:00,303481,KAISER PERMANENTE WESTSIDE MEDICAL CENTER,SKIPPED,https://healthy.kaiserpermanente.org/content/dam/kporg/final/documents/health-plan-documents/coverage-information/machine-readable/941105628-westside-medical-center-standard-charges-nw-en.csv,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161003+00:00,380001,ADVENTIST HEALTH COLUMBIA GORGE,SKIPPED,https://apps.para-hcfs.com/PTT/FinalLinks/Reports.aspx?dbName=dbMidColumbia&type=CDMWithoutLabel&fileType=CSV,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161007+00:00,380009,OHSU HOSPITAL PORTLAND,SKIPPED,https://www.ohsu.edu/sites/default/files/custom/931176109_Oregon-Health-and-Science-University_standardcharges.zip,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161012+00:00,380014,GOOD SAMARITAN REGIONAL MEDICAL CENTER,SKIPPED,https://samaritanhealth.pt.panaceainc.com/MRFDownload/samaritanhealth/goodsamaritan,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161015+00:00,380020,MCKENZIE-WILLAMETTE MEDICAL CENTER,SKIPPED,https://apps.para-hcfs.com/PTT/FinalLinks/Reports.aspx?dbName=dbMWMCSPRINGFIELDOR&type=CDMWithoutLabel&fileType=CSV,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161019+00:00,380005,ASANTE ASHLAND COMMUNITY HOSPITAL,FAILURE,https://www.asante.org/app/files/public/6ced7477-8c3f-45bc-b59e-cbc0ca8270f4/AsanteAshlandCommunityHospital_StandardCharges.zip,,PermanentHTTPError,Server returned 403,0.17
-2026-01-28T19:31:29.161024+00:00,380021,OHSU HILLSBORO MEDICAL CENTER,SKIPPED,https://drive.google.com/file/d/1RUYn1Kk5bQpF3pXQIQEqDgzcj20I5KNa/view?usp=sharing,,,Data is 0.7 days old (max age: 30),
-2026-01-28T19:31:29.161027+00:00,380025,LEGACY MOUNT HOOD MEDICAL CENTER,SKIPPED,https://www.legacyhealth.org/-/media/Files/CSV/930591528_legacy-mount-hood-medical-center_standardcharges.csv,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161031+00:00,380027,CHI MERCY MEDICAL CENTER,SKIPPED,https://chimercyhealth.com/genjson.php?l=https://chimercyhealth.com/assets/2024/12/930386868_chi-mercy-health-medical-center_standardcharges.json&f=930386868_chi-mercy-health-medical-center_standardcharges.json,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161035+00:00,380029,LEGACY SILVERTON HOSPITAL,SKIPPED,https://www.legacyhealth.org/-/media/Files/CSV/930281321_legacy-silverton-medical-center_standardcharges.csv,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161039+00:00,380037,PROVIDENCE NEWBERG MEDICAL CENTER,SKIPPED,https://pricetransparency.providence.org/oregon/live/931146501_providence-newberg-medical-center_standardcharges.json,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161044+00:00,380040,ST CHARLES REDMOND,FAILURE,https://stcharleshealthcare.org/pricetransparency/93-0602940_StCharlesHealthSystem_Redmond_standardcharges.zip,,MemoryError,,61.19
-2026-01-28T19:31:29.161047+00:00,380050,SKY LAKES MEDICAL CENTER,SKIPPED,https://www.skylakes.org/wp-content/uploads/2025/01/930508781-Sky-Lakes-Medical-Center-Standard-Charges-2025.zip,,,Data is 1.5 days old (max age: 30),
-2026-01-28T19:31:29.161051+00:00,380051,SALEM HEALTH SALEM HOSPITAL,SKIPPED,https://salemhealth.org/930579722_salem-hospital_standardcharges.json,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161055+00:00,380052,SAINT ALPHONSUS MEDICAL CENTER - ONTARIO,SKIPPED,https://trinityhealth.pt.panaceainc.com/MRFDownload/trinityhealth/saintalphonsusmedical-ontario,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161060+00:00,380056,SANTIAM HOSPITAL,SUCCESS,https://santiamhospital.org/wp-content/uploads/2023/12/2024-Santiam-Pricing-Transparency-File-.xlsx,,,,3.03
-2026-01-28T19:31:29.161063+00:00,380060,ADVENTIST HEALTH PORTLAND,SKIPPED,https://apps.para-hcfs.com/PTT/FinalLinks/Reports.aspx?dbName=dbAMCPORTLANDOR&type=CDMWithoutLabel&fileType=CSV,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161068+00:00,380061,PROVIDENCE PORTLAND MEDICAL CENTER,SKIPPED,https://pricetransparency.providence.org/oregon/live/930386906_providence-portland-medical-center_standardcharges.json,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161072+00:00,380071,WILLAMETTE VALLEY MEDICAL CENTER,SKIPPED,https://www.willamettevalleymedical.com/docs/ahwillamettevalleymedicalcenterlibraries/hcl/mrf3q25/621762552_willamette-valley-medical-center_standardcharges.csv,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161076+00:00,380075,PROVIDENCE MEDFORD MEDICAL CENTER,SKIPPED,https://pricetransparency.providence.org/oregon/live/930386912_providence-medford-medical-center_standardcharges.json,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161081+00:00,380082,PROVIDENCE MILWAUKIE HOSPITAL,SKIPPED,https://pricetransparency.providence.org/oregon/live/930924302_providence-milwaukie-hospital_standardcharges.json,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161084+00:00,380089,LEGACY MERIDIAN PARK MEDICAL CENTER,SKIPPED,https://www.legacyhealth.org/-/media/Files/CSV/930618975_legacy-meridian-park-medical-center_standardcharges.csv,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161088+00:00,380090,BAY AREA HOSPITAL,SKIPPED,https://apps.para-hcfs.com/PTT/FinalLinks/Reports.aspx?dbName=dbBayAreaHospital&type=CDMWithoutLabel&fileType=CSV,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161092+00:00,380102,PEACEHEALTH SACRED HEART MEDICAL CENTER RIVERBEND,SKIPPED,https://apim.services.craneware.com/api-pricing-transparency/api/public/ddf337f5c91ecd4ab2af2a271901674d/charges/mrf,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161097+00:00,381301,PEACEHEALTH COTTAGE GROVE COMMUNITY HOSPITAL,SKIPPED,https://apim.services.craneware.com/api-pricing-transparency/api/public/1d4f883a27f95c6823c22aca21c1dcef/charges/mrf,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161101+00:00,381303,PROVIDENCE SEASIDE HOSPITAL,SKIPPED,https://pricetransparency.providence.org/oregon/live/930796090_providence-seaside-hospital_standardcharges.json,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161104+00:00,381305,BLUE MOUNTAIN HOSPITAL,SKIPPED,https://bluemountainhospital.org/price-transparency/936002615_blue-mountain.csv,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161108+00:00,381306,WALLOWA MEMORIAL HOSPITAL,FAILURE,https://wchcd.org/wp-content/uploads/2024/12/936002339_wallowa-county-health-care-district_standardcharges.csv,,PermanentHTTPError,Server returned 404,1.22
-2026-01-28T19:31:29.161112+00:00,381307,HARNEY DISTRICT HOSPITAL,SKIPPED,https://harneydh.com/acknowledgement-form/,,,No scraper for format: None,
-2026-01-28T19:31:29.161116+00:00,381308,SALEM HEALTH WEST VALLEY HOSPITAL,SKIPPED,https://salemhealth.org/docs/default-source/pricing/westvalleyhospitalpricingjson,,,No scraper for format: None,
-2026-01-28T19:31:29.161120+00:00,381310,PIONEER MEMORIAL HOSPITAL,SUCCESS,https://www.morrowcountyhealthdistrict.org/files/7445aa9f8/871_CHARGEMASTER_20210331194517.csv,,,,1.53
-2026-01-28T19:31:29.161123+00:00,381311,LOWER UMPQUA HOSPITAL DISTRICT,SKIPPED,https://apps.para-hcfs.com/PTT/FinalLinks/Reports.aspx?dbName=dbLUHDREEDSPORTOR&type=CDMWithoutLabel&fileType=CSV,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161128+00:00,381312,COQUILLE VALLEY HOSPITAL,SKIPPED,https://www.cvhospital.org/wp-content/uploads/2025/03/CVHStandardCharges.csv.csv,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161131+00:00,381315,SAINT ALPHONSUS MEDICAL CENTER - BAKER CITY,SKIPPED,https://trinityhealth.pt.panaceainc.com/MRFDownload/trinityhealth/saintalphonsusmedicalcenter-bakercity,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161136+00:00,381316,PEACEHEALTH PEACE HARBOR MEDICAL CENTER,SKIPPED,https://apim.services.craneware.com/api-pricing-transparency/api/public/b3802a2f7c5adf80aae9a4c10d28b2e3/charges/mrf,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161140+00:00,381317,ADVENTIST HEALTH TILLAMOOK,SKIPPED,https://apps.para-hcfs.com/PTT/FinalLinks/Reports.aspx?dbName=dbAHTTILLAMOOKOR&type=CDMWithoutLabel&fileType=CSV,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161144+00:00,381318,PROVIDENCE HOOD RIVER MEMORIAL HOSPITAL,SKIPPED,https://pricetransparency.providence.org/oregon/live/931265038_providence-hood-river-memorial-hospital_standardcharges.json,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161152+00:00,381319,CHI ST ANTHONY HOSPITAL,SKIPPED,https://www.sahpendleton.org/content/dam/sahpendletonorg/2024-financial-forms/mrf-json/930391614_st-anthony-hospital-pendleton_standardcharges.json,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161157+00:00,381320,COLUMBIA MEMORIAL HOSPITAL,SKIPPED,https://machine-readable-files.com/columbia-memorial-hospital/930583856_columbia-memorial-hospital_standardcharges.csv,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161162+00:00,381321,GRANDE RONDE HOSPITAL,SKIPPED,https://www.grh.org/clientfiles/GetFile/930505325_grande-ronde-hospital_standardcharges.csv,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161166+00:00,381322,CURRY GENERAL HOSPITAL,SKIPPED,https://www.curryhealthnetwork.com/docs/930937095_CURRYGENERALHOSPITAL_STANDARDCHARGES.csv,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161169+00:00,383300,SHRINERS HOSPITAL FOR CHILDREN-PORTLAND,SKIPPED,https://apim.services.craneware.com/api-pricing-transparency/api/public/2823b8d43138258b7c2cb40fea30d548/charges/mrf,,,Data is 1.8 days old (max age: 30),
-2026-01-28T19:31:29.161174+00:00,384012,CEDAR HILLS HOSPITAL,SUCCESS,https://uhsfilecdn.eskycity.net/bh/262343447_cedar-hills_standardcharges.csv,,,,0.23
-2026-01-28T19:31:29.161178+00:00,380047,ST CHARLES MEDICAL CENTER BEND,SUCCESS,https://stcharleshealthcare.org/pricetransparency/93-0602940_StCharlesHealthSystem_Bend_standardcharges.zip,5628,,,447.09
-2026-01-28T19:31:29.161182+00:00,381324,ST CHARLES MADRAS,SUCCESS,https://stcharleshealthcare.org/pricetransparency/93-0602940_StCharlesHealthSystem_Madras_standardcharges.zip,5382,,,378.02
+2026-09-03T03:12:40.127499+00:00,303481,KAISER PERMANENTE WESTSIDE MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\303481.jsonl,2,,,0.04
+2026-09-03T03:12:40.127499+00:00,380001,ADVENTIST HEALTH COLUMBIA GORGE,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380001.jsonl,,,,0.03
+2026-09-03T03:12:40.127499+00:00,380005,ASANTE ASHLAND COMMUNITY HOSPITAL,SKIPPED,https://www.asante.org/app/files/public/6ced7477-8c3f-45bc-b59e-cbc0ca8270f4/AsanteAshlandCommunityHospital_StandardCharges.zip,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380005.jsonl,
+2026-09-03T03:12:40.127499+00:00,380009,OHSU HOSPITAL PORTLAND,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380009.jsonl,2,,,0.04
+2026-09-03T03:12:40.127499+00:00,380014,GOOD SAMARITAN REGIONAL MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380014.jsonl,1,,,0.09
+2026-09-03T03:12:40.127499+00:00,380020,MCKENZIE-WILLAMETTE MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380020.jsonl,,,,0.02
+2026-09-03T03:12:40.127499+00:00,380021,OHSU HILLSBORO MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380021.jsonl,2,,,0.02
+2026-09-03T03:12:40.127499+00:00,380025,LEGACY MOUNT HOOD MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380025.jsonl,,,,0.06
+2026-09-03T03:12:40.127499+00:00,380027,CHI MERCY MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380027.jsonl,,,,0.05
+2026-09-03T03:12:40.127499+00:00,380029,LEGACY SILVERTON HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380029.jsonl,,,,0.05
+2026-09-03T03:12:40.127499+00:00,380037,PROVIDENCE NEWBERG MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380037.jsonl,,,,0.06
+2026-09-03T03:12:40.127499+00:00,380040,ST CHARLES REDMOND,SKIPPED,https://stcharleshealthcare.org/pricetransparency/93-0602940_StCharlesHealthSystem_Redmond_standardcharges.zip,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380040.jsonl,
+2026-09-03T03:12:40.127499+00:00,380047,ST CHARLES MEDICAL CENTER BEND,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380047.jsonl,,,,0.03
+2026-09-03T03:12:40.127499+00:00,380050,SKY LAKES MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380050.jsonl,,,,0.00
+2026-09-03T03:12:40.127499+00:00,380051,SALEM HEALTH SALEM HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380051.jsonl,2,,,0.08
+2026-09-03T03:12:40.127499+00:00,380052,SAINT ALPHONSUS MEDICAL CENTER - ONTARIO,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380052.jsonl,,,,0.12
+2026-09-03T03:12:40.127499+00:00,380056,SANTIAM HOSPITAL,SKIPPED,https://santiamhospital.org/wp-content/uploads/2023/12/2024-Santiam-Pricing-Transparency-File-.xlsx,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380056.jsonl,
+2026-09-03T03:12:40.127499+00:00,380060,ADVENTIST HEALTH PORTLAND,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380060.jsonl,,,,0.02
+2026-09-03T03:12:40.127499+00:00,380061,PROVIDENCE PORTLAND MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380061.jsonl,,,,0.02
+2026-09-03T03:12:40.127499+00:00,380071,WILLAMETTE VALLEY MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380071.jsonl,,,,0.04
+2026-09-03T03:12:40.127499+00:00,380075,PROVIDENCE MEDFORD MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380075.jsonl,,,,0.08
+2026-09-03T03:12:40.127499+00:00,380082,PROVIDENCE MILWAUKIE HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380082.jsonl,,,,0.03
+2026-09-03T03:12:40.127499+00:00,380089,LEGACY MERIDIAN PARK MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380089.jsonl,,,,0.06
+2026-09-03T03:12:40.127499+00:00,380090,BAY AREA HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380090.jsonl,2,,,0.02
+2026-09-03T03:12:40.127499+00:00,380102,PEACEHEALTH SACRED HEART MEDICAL CENTER RIVERBEND,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\380102.jsonl,2,,,0.09
+2026-09-03T03:12:40.127499+00:00,381301,PEACEHEALTH COTTAGE GROVE COMMUNITY HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\381301.jsonl,2,,,0.01
+2026-09-03T03:12:40.127499+00:00,381303,PROVIDENCE SEASIDE HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\381303.jsonl,,,,0.11
+2026-09-03T03:12:40.127499+00:00,381305,BLUE MOUNTAIN HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\381305.jsonl,,,,0.02
+2026-09-03T03:12:40.127499+00:00,381306,WALLOWA MEMORIAL HOSPITAL,SKIPPED,https://wchcd.org/wp-content/uploads/2024/12/936002339_wallowa-county-health-care-district_standardcharges.csv,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\381306.jsonl,
+2026-09-03T03:12:40.127499+00:00,381307,HARNEY DISTRICT HOSPITAL,SKIPPED,https://harneydh.com/acknowledgement-form/,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\381307.jsonl,
+2026-09-03T03:12:40.127499+00:00,381308,SALEM HEALTH WEST VALLEY HOSPITAL,SKIPPED,https://salemhealth.org/docs/default-source/pricing/westvalleyhospitalpricingjson,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\381308.jsonl,
+2026-09-03T03:12:40.127499+00:00,381310,PIONEER MEMORIAL HOSPITAL,SKIPPED,https://www.morrowcountyhealthdistrict.org/files/7445aa9f8/871_CHARGEMASTER_20210331194517.csv,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\381310.jsonl,
+2026-09-03T03:12:40.127499+00:00,381311,LOWER UMPQUA HOSPITAL DISTRICT,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\381311.jsonl,,,,0.10
+2026-09-03T03:12:40.127499+00:00,381312,COQUILLE VALLEY HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\381312.jsonl,,,,0.01
+2026-09-03T03:12:40.127499+00:00,381315,SAINT ALPHONSUS MEDICAL CENTER - BAKER CITY,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\381315.jsonl,,,,0.09
+2026-09-03T03:12:40.127499+00:00,381316,PEACEHEALTH PEACE HARBOR MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\381316.jsonl,2,,,0.02
+2026-09-03T03:12:40.127499+00:00,381317,ADVENTIST HEALTH TILLAMOOK,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\381317.jsonl,,,,0.03
+2026-09-03T03:12:40.127499+00:00,381318,PROVIDENCE HOOD RIVER MEMORIAL HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\381318.jsonl,,,,0.02
+2026-09-03T03:12:40.127499+00:00,381319,CHI ST ANTHONY HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\381319.jsonl,,,,0.01
+2026-09-03T03:12:40.127499+00:00,381320,COLUMBIA MEMORIAL HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\381320.jsonl,,,,0.01
+2026-09-03T03:12:40.127499+00:00,381321,GRANDE RONDE HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\381321.jsonl,,,,0.02
+2026-09-03T03:12:40.127499+00:00,381322,CURRY GENERAL HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\381322.jsonl,,,,0.01
+2026-09-03T03:12:40.127499+00:00,381324,ST CHARLES MADRAS,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\381324.jsonl,,,,0.02
+2026-09-03T03:12:40.127499+00:00,383300,SHRINERS HOSPITAL FOR CHILDREN-PORTLAND,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\383300.jsonl,,,,0.01
+2026-09-03T03:12:40.127499+00:00,384012,CEDAR HILLS HOSPITAL,SKIPPED,https://uhsfilecdn.eskycity.net/bh/262343447_cedar-hills_standardcharges.csv,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\OR\384012.jsonl,

@@ -1,2 +1,120 @@
 date,ccn,hospital,status,file_url,records,error_type,error_message,duration
-2026-08-27T13:44:25.672331+00:00,340001,ATRIUM HEALTH CABARRUS,SUCCESS,https://sthpiprd.blob.core.windows.net/machine-readable-files/11165/560529945-1487866315_the-charlotte-mecklenburg-hospital-authority_standardcharges.csv,34,,,263.45
+2026-09-03T03:12:40.134272+00:00,340001,ATRIUM HEALTH CABARRUS,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340001.jsonl,2,,,0.10
+2026-09-03T03:12:40.134272+00:00,340002,MISSION HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340002.jsonl,13,,,0.29
+2026-09-03T03:12:40.134272+00:00,340003,NORTHERN REGIONAL HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340003.jsonl,,,,0.01
+2026-09-03T03:12:40.134272+00:00,340004,ATRIUM HEALTH WAKE FOREST BAPTIST HIGH POINT MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340004.jsonl,1,,,0.09
+2026-09-03T03:12:40.134272+00:00,340007,CONE HEALTH ANNIE PENN HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340007.jsonl,2,,,0.03
+2026-09-03T03:12:40.134272+00:00,340008,SCOTLAND MEMORIAL HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340008.jsonl,,,,0.01
+2026-09-03T03:12:40.134272+00:00,340010,WAYNE UNC HEALTHCARE,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340010.jsonl,2,,,0.08
+2026-09-03T03:12:40.134272+00:00,340013,RUTHERFORD REGIONAL HEALTH SYSTEM,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340013.jsonl,,,,0.02
+2026-09-03T03:12:40.134272+00:00,340014,NOVANT HEALTH FORSYTH MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340014.jsonl,2,,,0.07
+2026-09-03T03:12:40.134272+00:00,340015,NOVANT HEALTH ROWAN MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340015.jsonl,2,,,0.05
+2026-09-03T03:12:40.134272+00:00,340016,HARRIS REGIONAL HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340016.jsonl,,,,0.02
+2026-09-03T03:12:40.134272+00:00,340017,UNC HEALTH PARDEE,SKIPPED,https://rca.centaurihs.com/ptapp/#ba3c4e2c4a2e1f7ea210c970fc4319b1465e1ac06ec9ea1c4d6cfc8c1be9351c,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340017.jsonl,
+2026-09-03T03:12:40.134272+00:00,340020,CENTRAL CAROLINA HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340020.jsonl,,,,0.01
+2026-09-03T03:12:40.134272+00:00,340021,ATRIUM HEALTH CLEVELAND,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340021.jsonl,2,,,0.05
+2026-09-03T03:12:40.134272+00:00,340023,ADVENTHEALTH HENDERSONVILLE,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340023.jsonl,2,,,0.03
+2026-09-03T03:12:40.134272+00:00,340024,SAMPSON REGIONAL MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340024.jsonl,,,,0.01
+2026-09-03T03:12:40.134272+00:00,340027,UNC LENOIR HEALTH CARE,SKIPPED,https://rca.centaurihs.com/ptapp/#3903c4d6330984f9b7e84e01ab9e392c4786dfac56f8105778ef27c66cdf035,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340027.jsonl,
+2026-09-03T03:12:40.134272+00:00,340028,CAPE FEAR VALLEY MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340028.jsonl,,,,0.03
+2026-09-03T03:12:40.134272+00:00,340030,DUKE UNIVERSITY HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340030.jsonl,2,,,0.03
+2026-09-03T03:12:40.134272+00:00,340032,CAROMONT REGIONAL MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340032.jsonl,,,,0.02
+2026-09-03T03:12:40.134272+00:00,340037,ATRIUM HEALTH KINGS MOUNTAIN,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340037.jsonl,2,,,0.22
+2026-09-03T03:12:40.134272+00:00,340038,ECU HEALTH BEAUFORT HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340038.jsonl,2,,,0.03
+2026-09-03T03:12:40.134272+00:00,340039,IREDELL MEMORIAL HOSPITAL,SKIPPED,https://res.cloudinary.com/dpmykpsih/raw/upload/iredell-health-system-site-359/media/r/8e24a90b6c444f498d9e8a8f2a618bcf/560591303_iredell-memorial-hospital_standardcharges_2024-final.csv,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340039.jsonl,
+2026-09-03T03:12:40.134272+00:00,340040,ECU HEALTH MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340040.jsonl,2,,,0.03
+2026-09-03T03:12:40.134272+00:00,340041,CALDWELL MEMORIAL HOSPITAL,SKIPPED,https://rca.centaurihs.com/ptapp/#62bfdf8b1690285fcd35da91d1edbbbbf2c5721dcbbbd16e7e2e7b7d8de3e597,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340041.jsonl,
+2026-09-03T03:12:40.135276+00:00,340042,ONSLOW MEMORIAL HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340042.jsonl,1,,,0.11
+2026-09-03T03:12:40.135276+00:00,340047,ATRIUM HEALTH WAKE FOREST BAPTIST,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340047.jsonl,1,,,0.09
+2026-09-03T03:12:40.135276+00:00,340049,NORTH CAROLINA SPECIALTY HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340049.jsonl,,,,0.01
+2026-09-03T03:12:40.135276+00:00,340050,UNC HEALTH SOUTHEASTERN,SKIPPED,https://rca.centaurihs.com/ptapp/#12c87a4c8957c9e1c0c94af03a352d556b2a5c7551aa4df448609ce6dc2da33b,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340050.jsonl,
+2026-09-03T03:12:40.135276+00:00,340051,WATAUGA MEDICAL CENTER,SKIPPED,https://rca.centaurihs.com/ptapp/#e1e8fab320553614a36ca3531242dfa4110541e14f64b03b7f6e035372d21468,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340051.jsonl,
+2026-09-03T03:12:40.135276+00:00,340053,NOVANT HEALTH PRESBYTERIAN MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340053.jsonl,2,,,0.06
+2026-09-03T03:12:40.135276+00:00,340060,UNC ROCKINGHAM HOSPITAL,SKIPPED,https://rca.centaurihs.com/ptapp/#ce2afee182dc4f67a537e90e9a8037e82a0deb7d7bc758280d0cd5d66c634ada,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340060.jsonl,
+2026-09-03T03:12:40.135332+00:00,340061,UNC MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340061.jsonl,2,,,0.02
+2026-09-03T03:12:40.135332+00:00,340064,ATRIUM HEALTH WAKE FOREST BAPTIST WILKES MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340064.jsonl,1,,,0.08
+2026-09-03T03:12:40.135332+00:00,340068,COLUMBUS REGIONAL HEALTHCARE SYSTEM,SKIPPED,https://sthpiprd.blob.core.windows.net/machine-readable-files/11292/560538020_columbus-regional-healthcare-system_standardcharges.csv,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340068.jsonl,
+2026-09-03T03:12:40.135332+00:00,340070,CONE HEALTH ALAMANCE REGIONAL MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340070.jsonl,2,,,0.06
+2026-09-03T03:12:40.135332+00:00,340071,CAPE FEAR VALLEY BETSY JOHNSON HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340071.jsonl,,,,0.07
+2026-09-03T03:12:40.135332+00:00,340073,DUKE RALEIGH HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340073.jsonl,2,,,0.07
+2026-09-03T03:12:40.135332+00:00,340075,UNC HEALTH BLUE RIDGE,SKIPPED,https://rca.centaurihs.com/ptapp/#80fc95fc4f9f50bd5597b8e3db03d0cd2cd99dd204827250b1b8c71cbc626d48,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340075.jsonl,
+2026-09-03T03:12:40.135332+00:00,340084,ATRIUM HEALTH ANSON,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340084.jsonl,2,,,0.05
+2026-09-03T03:12:40.135332+00:00,340085,NOVANT HEALTH THOMASVILLE MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340085.jsonl,2,,,0.01
+2026-09-03T03:12:40.135332+00:00,340087,MISSION HOSPITAL MCDOWELL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340087.jsonl,2,,,0.06
+2026-09-03T03:12:40.135332+00:00,340090,UNC HEALTH JOHNSTON,SKIPPED,https://rca.centaurihs.com/ptapp/#1bebae81d06505b29fc9a5323fb9dac3f480979f0fa32bf4004915e0207d36a9,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340090.jsonl,
+2026-09-03T03:12:40.135332+00:00,340091,CONE HEALTH MOSES CONE HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340091.jsonl,2,,,0.10
+2026-09-03T03:12:40.135332+00:00,340094,NOVANT HEALTH NEW HANOVER ORTHOPEDIC HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340094.jsonl,2,,,0.02
+2026-09-03T03:12:40.135332+00:00,340096,ATRIUM HEALTH WAKE FOREST BAPTIST LEXINGTON MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340096.jsonl,1,,,0.06
+2026-09-03T03:12:40.135332+00:00,340097,"HUGH CHATHAM MEMORIAL HOSPITAL, INC.",SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340097.jsonl,,,,0.08
+2026-09-03T03:12:40.135332+00:00,340098,ATRIUM HEALTH MERCY,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340098.jsonl,2,,,0.05
+2026-09-03T03:12:40.135332+00:00,340098,ATRIUM HEALTH PINEVILLE,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340098.jsonl,2,,,0.05
+2026-09-03T03:12:40.135332+00:00,340099,ECU HEALTH ROANOKE-CHOWAN HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340099.jsonl,2,,,0.02
+2026-09-03T03:12:40.135332+00:00,340107,ECU HEALTH EDGECOMBE HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340107.jsonl,2,,,0.02
+2026-09-03T03:12:40.135332+00:00,340109,SENTARA ALBEMARLE MEDICAL CENTER,SKIPPED,https://www.sentara.com/Documents/s/sentaraalbemarlemedicalcenterstandardchargesxlsx-1395240,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340109.jsonl,
+2026-09-03T03:12:40.135332+00:00,340113,ATRIUM HEALTH CAROLINAS MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340113.jsonl,2,,,0.05
+2026-09-03T03:12:40.135332+00:00,340113,CAROLINAS REHABILITATION CHARLOTTE,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340113.jsonl,2,,,0.05
+2026-09-03T03:12:40.135332+00:00,340114,UNC REX HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340114.jsonl,2,,,0.02
+2026-09-03T03:12:40.135332+00:00,340115,FIRSTHEALTH MOORE REGIONAL HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340115.jsonl,2,,,0.02
+2026-09-03T03:12:40.135332+00:00,340116,FRYE REGIONAL MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340116.jsonl,,,,0.01
+2026-09-03T03:12:40.135332+00:00,340119,ATRIUM HEALTH STANLY,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340119.jsonl,2,,,0.05
+2026-09-03T03:12:40.135332+00:00,340120,ECU HEALTH DUPLIN HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340120.jsonl,2,,,0.02
+2026-09-03T03:12:40.135332+00:00,340123,RANDOLPH HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340123.jsonl,,,,0.01
+2026-09-03T03:12:40.135332+00:00,340126,WILSON MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340126.jsonl,,,,0.08
+2026-09-03T03:12:40.135332+00:00,340127,GRANVILLE HEALTH SYSTEM,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340127.jsonl,,,,0.06
+2026-09-03T03:12:40.135332+00:00,340130,ATRIUM HEALTH UNION,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340130.jsonl,2,,,0.06
+2026-09-03T03:12:40.135332+00:00,340131,CAROLINA EAST HEALTH,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340131.jsonl,,,,0.03
+2026-09-03T03:12:40.135332+00:00,340132,MARIA PARHAM MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340132.jsonl,,,,0.02
+2026-09-03T03:12:40.135332+00:00,340141,NOVANT HEALTH NEW HANOVER REGIONAL MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340141.jsonl,2,,,0.03
+2026-09-03T03:12:40.135332+00:00,340142,CARTERET HEALTH CARE,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340142.jsonl,,,,0.01
+2026-09-03T03:12:40.135332+00:00,340143,CATAWBA VALLEY MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340143.jsonl,,,,0.01
+2026-09-03T03:12:40.135332+00:00,340145,ATRIUM HEALTH LINCOLN,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340145.jsonl,2,,,0.12
+2026-09-03T03:12:40.135332+00:00,340147,UNC HEALTH NASH,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340147.jsonl,2,,,0.02
+2026-09-03T03:12:40.135332+00:00,340148,NOVANT HEALTH MEDICAL PARK HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340148.jsonl,2,,,0.01
+2026-09-03T03:12:40.135332+00:00,340151,ECU HEALTH NORTH HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340151.jsonl,,,,0.10
+2026-09-03T03:12:40.135332+00:00,340155,DUKE REGIONAL HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340155.jsonl,2,,,0.03
+2026-09-03T03:12:40.135332+00:00,340156,CHEROKEE INDIAN HOSPITAL AUTHORITY,SKIPPED,https://cherokeehospital.org/wp-content/uploads/2025/01/2025-Chargemaster.xlsx,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340156.jsonl,
+2026-09-03T03:12:40.135332+00:00,340158,NOVANT HEALTH BRUNSWICK MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340158.jsonl,2,,,0.01
+2026-09-03T03:12:40.135332+00:00,340159,PERSON MEMORIAL HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340159.jsonl,,,,0.07
+2026-09-03T03:12:40.135332+00:00,340166,ATRIUM HEALTH UNIVERSITY CITY,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340166.jsonl,2,,,0.06
+2026-09-03T03:12:40.135332+00:00,340168,WILMINGTON TREATMENT CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340168.jsonl,2,,,0.02
+2026-09-03T03:12:40.135332+00:00,340171,NOVANT HEALTH MATTHEWS MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340171.jsonl,2,,,0.10
+2026-09-03T03:12:40.135332+00:00,340173,WAKEMED CARY HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340173.jsonl,2,,,0.06
+2026-09-03T03:12:40.135332+00:00,340183,NOVANT HEALTH HUNTERSVILLE MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340183.jsonl,2,,,0.02
+2026-09-03T03:12:40.135332+00:00,340184,HAYWOOD REGIONAL MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340184.jsonl,,,,0.07
+2026-09-03T03:12:40.135332+00:00,340187,ATRIUM HEALTH WAKE FOREST BAPTIST DAVIE MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340187.jsonl,2,,,0.05
+2026-09-03T03:12:40.135332+00:00,340188,CAPE FEAR VALLEY HOKE HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340188.jsonl,,,,0.02
+2026-09-03T03:12:40.135332+00:00,340190,NOVANT HEALTH MINT HILL MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340190.jsonl,2,,,0.02
+2026-09-03T03:12:40.135332+00:00,340195,NOVANT HEALTH BALLANTYNE MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\340195.jsonl,2,,,0.13
+2026-09-03T03:12:40.135332+00:00,341303,FIRSTHEALTH MONTGOMERY MEMORIAL HOSPITAL,SKIPPED,https://www.firsthealth.org/app/files/public/9aff0b99-d6cf-475a-9718-c1bc3010ed5e/561936354_firsthealth-moore-regional-hospital_standardcharges.csv,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\341303.jsonl,
+2026-09-03T03:12:40.135332+00:00,341304,ECU HEALTH BERTIE HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\341304.jsonl,2,,,0.03
+2026-09-03T03:12:40.135332+00:00,341305,SWAIN COMMUNITY HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\341305.jsonl,,,,0.02
+2026-09-03T03:12:40.135332+00:00,341307,NOVANT HEALTH PENDER MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\341307.jsonl,2,,,0.01
+2026-09-03T03:12:40.135332+00:00,341311,CHATHAM HOSPITAL,SKIPPED,https://rca.centaurihs.com/ptapp/#b1f9dd1570d8e8f2b7f3cc8cfdd353c8dd2f856b654beeed377bcea39a1d9196,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\341311.jsonl,
+2026-09-03T03:12:40.135332+00:00,341314,WASHINGTON REGIONAL MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\341314.jsonl,,,,0.01
+2026-09-03T03:12:40.135332+00:00,341315,CAPE FEAR VALLEY BLADEN COUNTY HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\341315.jsonl,,,,0.02
+2026-09-03T03:12:40.135332+00:00,341316,HIGHLANDS-CASHIERS HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\341316.jsonl,2,,,0.09
+2026-09-03T03:12:40.135332+00:00,341317,LIFEBRITE COMMUNITY HOSPITAL OF STOKES,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\341317.jsonl,,,,0.10
+2026-09-03T03:12:40.135332+00:00,341318,ECU HEALTH CHOWAN HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\341318.jsonl,2,,,0.02
+2026-09-03T03:12:40.135332+00:00,341319,TRANSYLVANIA REGIONAL HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\341319.jsonl,2,,,0.06
+2026-09-03T03:12:40.135332+00:00,341320,ALLEGHANY MEMORIAL HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\341320.jsonl,1,,,0.05
+2026-09-03T03:12:40.135332+00:00,341322,ADVENTHEALTH POLK,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\341322.jsonl,,,,0.01
+2026-09-03T03:12:40.135332+00:00,341324,THE OUTER BANKS HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\341324.jsonl,2,,,0.02
+2026-09-03T03:12:40.135332+00:00,341325,ASHE MEMORIAL HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\341325.jsonl,,,,0.01
+2026-09-03T03:12:40.135332+00:00,341326,ANGEL MEDICAL CENTER,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\341326.jsonl,2,,,0.16
+2026-09-03T03:12:40.135332+00:00,341327,DOSHER MEMORIAL HOSPITAL,SKIPPED,https://www.dosher.org/docs/560845824_j-arthur-dosher-memorial-hospital_standardcharges.csv,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\341327.jsonl,
+2026-09-03T03:12:40.135332+00:00,341328,ERLANGER WESTERN CAROLINA HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\341328.jsonl,1,,,0.12
+2026-09-03T03:12:40.135332+00:00,341329,BLUE RIDGE REGIONAL HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\341329.jsonl,2,,,0.06
+2026-09-03T03:12:40.135332+00:00,342012,KINDRED HOSPITAL - GREENSBORO,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\342012.jsonl,,,,0.01
+2026-09-03T03:12:40.135332+00:00,342013,PAM HEALTH SPECIALTY HOSPITAL OF ROCKY MOUNT,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\342013.jsonl,,,,0.01
+2026-09-03T03:12:40.135332+00:00,342014,CAPE FEAR VALLEY HIGHSMITH-RAINEY SPECIALTY HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\342014.jsonl,,,,0.02
+2026-09-03T03:12:40.135332+00:00,342015,CAROLINAS CONTINUECARE HOSPITAL AT PINEVILLE,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\342015.jsonl,,,,0.00
+2026-09-03T03:12:40.135332+00:00,342018,SELECT SPECIALTY HOSPITAL - DURHAM,SKIPPED,https://resources.selectmedical.com/pricing-transparency/critical-illness-recovery/25-18222461_Select_Specialty_Hospital-Durham_standardcharges.csv,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\342018.jsonl,
+2026-09-03T03:12:40.135332+00:00,342020,SELECT SPECIALTY HOSPITAL - GREENSBORO,SKIPPED,https://resources.selectmedical.com/pricing-transparency/critical-illness-recovery/71-0958380_Select_Specialty_Hospital-Greensboro_standardcharges.csv,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\342020.jsonl,
+2026-09-03T03:12:40.135332+00:00,343025,CAREPARTNERS REHABILITATION HOSPITAL,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\343025.jsonl,2,,,0.07
+2026-09-03T03:12:40.135332+00:00,343027,NOVANT HEALTH REHABILITATION HOSPITAL,SKIPPED,https://edge.sitecorecloud.io/encompasshee178-encompasshed9db-prodb258-07da/media/Project/EncompassHealth/encompasshealth/Files/1-price-transparency/813251045_Novant-Health-Rehabilitation-Hospital-an-affiliate-of-Encompass-Health_standardcharges.csv,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\343027.jsonl,
+2026-09-03T03:12:40.135332+00:00,344007,OLD VINEYARD BEHAVIORAL HEALTH SERVICES,SKIPPED,https://uhsfilecdn.eskycity.net/bh/201943356_old-vineyard_standardcharges.csv,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\344007.jsonl,
+2026-09-03T03:12:40.135332+00:00,344014,HOLLY HILL HOSPITAL,SKIPPED,https://uhsfilecdn.eskycity.net/bh/621692189_holly-hill_standardcharges.csv,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\344014.jsonl,
+2026-09-03T03:12:40.135332+00:00,344016,BRYNN MARR HOSPITAL,SKIPPED,https://uhsfilecdn.eskycity.net/bh/561317433_brynn-marr_standardcharges.csv,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\344016.jsonl,
+2026-09-03T03:12:40.135332+00:00,344030,CAROLINA DUNES BEHAVIORAL HEALTH,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\344030.jsonl,,,,0.00
+2026-09-03T03:12:40.135332+00:00,344036,IREDELL DAVIS BEHAVIORAL HEALTH HOSPITAL,SKIPPED,https://res.cloudinary.com/dpmykpsih/raw/upload/iredell-health-system-site-359/media/r/1e6f0b9bfd7f446a80d15e9e4313e007/560591303_iredell_davis_standardcharges_10-1-2024-final.csv,,,No existing archive at C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\344036.jsonl,
+2026-09-03T03:12:40.135332+00:00,347041,FIRSTHEALTH MOORE REGIONAL HOSPITAL - RICHMOND,SUCCESS,C:\Users\bombt\Documents\Code\Hospital_Pricing\data\NC\347041.jsonl,2,,,0.02

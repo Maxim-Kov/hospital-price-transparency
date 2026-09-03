@@ -17,6 +17,10 @@ Usage:
     # Keep only one CPT/HCPCS code (still downloads full files)
     python scripts/scrape.py --hcpcs 99213
 
+    # Filter from existing data/{STATE}/{CCN}.jsonl (no download)
+    python scripts/scrape.py --from-existing --hcpcs J1303
+    python scripts/scrape.py --from-existing --state VT --hcpcs J1303
+
     # Combine with state or hospital filters
     python scripts/scrape.py --state VT --hcpcs 99213
     python scripts/scrape.py --ccn 470011 --hcpcs J0585 --hcpcs 99213
@@ -41,8 +45,10 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.config import ScraperConfig, get_data_age_days, load_hospital_configs_from_urls
+from src.from_existing import run_from_existing
 from src.models import HospitalConfig, ScrapeResult, ScrapeStats, ScrapeStatus, parse_hcpcs_codes
 from src.normalizers import CPTNormalizer
+from src.price_stats import format_stats_preview, write_price_stats_for_run
 from src.scrapers import get_scraper
 from src.utils.http_client import RetryHTTPClient
 from src.utils.logger import get_logger, setup_logging
@@ -307,7 +313,15 @@ def _process_hospital_with_timeout(
     help=(
         "Keep only these CPT/HCPCS codes after parsing. Repeatable or comma-separated "
         "(e.g. --hcpcs 99213 --hcpcs J0585). Combines with --state and --ccn. "
-        "Writes to data/hcpcs/{CODE}/ so full hospital snapshots are not overwritten."
+        "Writes to data/outputs/{CODE}/ so full hospital snapshots are not overwritten."
+    ),
+)
+@click.option(
+    "--from-existing",
+    is_flag=True,
+    help=(
+        "Do not download. Filter --hcpcs codes from existing full archives "
+        "in data/{STATE}/{CCN}.jsonl into data/outputs/{CODE}/. Requires --hcpcs."
     ),
 )
 @click.option("--validate-only", is_flag=True, help="Only validate URLs, don't scrape")
@@ -323,9 +337,12 @@ def _process_hospital_with_timeout(
 @click.option(
     "--parallel",
     "-p",
-    default=1,
+    default=None,
     type=int,
-    help="Number of parallel workers (default: 1, sequential)",
+    help=(
+        "Number of parallel workers. Downloads: hospitals in parallel (default: 1). "
+        "--from-existing: states in parallel (default: one worker per state)."
+    ),
 )
 @click.option(
     "--timeout",
@@ -338,12 +355,13 @@ def main(
     state: str | None,
     ccn: str | None,
     hcpcs: tuple[str, ...],
+    from_existing: bool,
     validate_only: bool,
     dry_run: bool,
     verbose: bool,
     json_logs: bool,
     max_age_days: int,
-    parallel: int,
+    parallel: int | None,
     timeout: int,
 ) -> None:
     """Scrape hospitals from URL JSON files.
@@ -355,6 +373,11 @@ def main(
         hcpcs_codes = parse_hcpcs_codes(hcpcs)
     except ValueError as e:
         raise click.BadParameter(str(e), param_hint="--hcpcs") from e
+
+    if from_existing and not hcpcs_codes:
+        raise click.UsageError("--from-existing requires --hcpcs")
+    if from_existing and validate_only:
+        raise click.UsageError("--from-existing cannot be combined with --validate-only")
 
     # Set up configuration
     config = ScraperConfig(
@@ -376,6 +399,7 @@ def main(
         state_filter=state,
         ccn_filter=ccn,
         hcpcs_filter=hcpcs_codes or None,
+        from_existing=from_existing,
         validate_only=validate_only,
         dry_run=dry_run,
         max_age_days=max_age_days,
@@ -403,9 +427,10 @@ def main(
 
         click.echo(f"Loaded {len(hospitals)} hospitals from URL files")
         if hcpcs_codes:
+            mode = "from existing archives" if from_existing else "download + filter"
             click.echo(
                 f"HCPCS filter: {', '.join(hcpcs_codes)} "
-                f"(output: data/hcpcs/{'_'.join(hcpcs_codes)}/)"
+                f"({mode}; output: data/outputs/{'_'.join(hcpcs_codes)}/)"
             )
 
     except Exception as e:
@@ -413,113 +438,136 @@ def main(
         click.echo(f"Error loading configuration: {e}")
         sys.exit(1)
 
-    # Verify CPT vocabulary exists (workers load it themselves)
-    concept_df_path = config.concept_csv_path
-    if not concept_df_path.exists():
-        click.echo(f"Error: CPT vocabulary not found at {concept_df_path}")
-        sys.exit(1)
-
-    logger.info("cpt_vocabulary_path", path=str(concept_df_path))
-
     # Track results by state for status file output
     stats = ScrapeStats(start_time=datetime.now())
     results_by_state: dict[str, list[tuple[HospitalConfig, ScrapeResult]]] = {}
 
-    # Process hospitals
-    if parallel <= 1:
-        # Sequential processing
-        for i, hospital in enumerate(hospitals, 1):
-            click.echo(f"\n[{i}/{len(hospitals)}] {hospital.hospital} ({hospital.ccn})")
-            click.echo(f"  State: {hospital.state} | Format: {hospital.type}")
-
-            hospital, result, message = _process_hospital_with_timeout(
-                hospital=hospital,
-                config=config,
-                concept_df_path=concept_df_path,
-                validate_only=validate_only,
-                dry_run=dry_run,
-                max_age_days=max_age_days,
-                timeout=timeout,
-            )
-            click.echo(f"  {message}")
-
-            stats.add_result(result)
-
-            # Track result by state
-            state_key = hospital.state.upper()
-            if state_key not in results_by_state:
-                results_by_state[state_key] = []
-            results_by_state[state_key].append((hospital, result))
-
+    state_count = len({h.state.upper() for h in hospitals})
+    if parallel is None:
+        workers = state_count if from_existing else 1
     else:
-        # Parallel processing with process pool
+        workers = max(1, parallel)
+
+    if from_existing:
         click.echo(
-            f"\nProcessing {len(hospitals)} hospitals with {parallel} workers (timeout: {timeout}s)..."
+            f"\nFiltering from existing full archives "
+            f"({workers} state worker{'s' if workers != 1 else ''}, no download)...\n"
         )
-        click.echo("Using multiprocessing - stuck workers will be killed.\n")
+        run_results = run_from_existing(
+            config, hospitals, dry_run=dry_run, parallel=workers
+        )
+        for i, (hospital, result, message) in enumerate(run_results, 1):
+            click.echo(f"[{i}/{len(hospitals)}] {hospital.state} {hospital.ccn} {message}")
+            stats.add_result(result)
+            state_key = hospital.state.upper()
+            results_by_state.setdefault(state_key, []).append((hospital, result))
+    else:
+        # Verify CPT vocabulary exists (workers load it themselves)
+        concept_df_path = config.concept_csv_path
+        if not concept_df_path.exists():
+            click.echo(f"Error: CPT vocabulary not found at {concept_df_path}")
+            sys.exit(1)
 
-        # Use a semaphore to limit concurrent processes
-        from concurrent.futures import ProcessPoolExecutor, as_completed
+        logger.info("cpt_vocabulary_path", path=str(concept_df_path))
 
-        with ProcessPoolExecutor(max_workers=parallel) as executor:
-            # Submit all tasks
-            future_to_hospital = {
-                executor.submit(
-                    _process_hospital_with_timeout,
-                    hospital=h,
+        # Process hospitals
+        if workers <= 1:
+            # Sequential processing
+            for i, hospital in enumerate(hospitals, 1):
+                click.echo(f"\n[{i}/{len(hospitals)}] {hospital.hospital} ({hospital.ccn})")
+                click.echo(f"  State: {hospital.state} | Format: {hospital.type}")
+
+                hospital, result, message = _process_hospital_with_timeout(
+                    hospital=hospital,
                     config=config,
                     concept_df_path=concept_df_path,
                     validate_only=validate_only,
                     dry_run=dry_run,
                     max_age_days=max_age_days,
                     timeout=timeout,
-                ): h
-                for h in hospitals
-            }
-
-            # Process results as they complete
-            completed = 0
-            for future in as_completed(future_to_hospital):
-                completed += 1
-                original_hospital = future_to_hospital[future]
-                try:
-                    hospital, result, message = future.result()
-
-                    # Compact output for parallel mode
-                    status_char = message[0] if message else "?"
-                    hospital_name = (
-                        hospital.hospital[:30] + "..."
-                        if len(hospital.hospital) > 30
-                        else hospital.hospital
-                    )
-                    click.echo(
-                        f"[{completed}/{len(hospitals)}] {status_char} {hospital.ccn} ({hospital_name})"
-                    )
-
-                    # Track result by state
-                    state_key = hospital.state.upper()
-                    if state_key not in results_by_state:
-                        results_by_state[state_key] = []
-                    results_by_state[state_key].append((hospital, result))
-
-                except Exception as e:
-                    click.echo(
-                        f"[{completed}/{len(hospitals)}] ! {original_hospital.ccn} Error: {e}"
-                    )
-                    result = ScrapeResult.failure(
-                        hospital_npi=original_hospital.hospital_npi,
-                        file_url=original_hospital.file_url,
-                        error=e,
-                        duration_seconds=0.0,
-                        ccn=original_hospital.ccn,
-                    )
-
-                    state_key = original_hospital.state.upper()
-                    if state_key not in results_by_state:
-                        results_by_state[state_key] = []
-                    results_by_state[state_key].append((original_hospital, result))
+                )
+                click.echo(f"  {message}")
 
                 stats.add_result(result)
+
+                # Track result by state
+                state_key = hospital.state.upper()
+                if state_key not in results_by_state:
+                    results_by_state[state_key] = []
+                results_by_state[state_key].append((hospital, result))
+
+        else:
+            # Parallel processing with process pool
+            click.echo(
+                f"\nProcessing {len(hospitals)} hospitals with {workers} workers "
+                f"(timeout: {timeout}s)..."
+            )
+            click.echo("Using multiprocessing - stuck workers will be killed.\n")
+
+            # Use a semaphore to limit concurrent processes
+            from concurrent.futures import ProcessPoolExecutor, as_completed
+
+            with ProcessPoolExecutor(max_workers=workers) as executor:
+                # Submit all tasks
+                future_to_hospital = {
+                    executor.submit(
+                        _process_hospital_with_timeout,
+                        hospital=h,
+                        config=config,
+                        concept_df_path=concept_df_path,
+                        validate_only=validate_only,
+                        dry_run=dry_run,
+                        max_age_days=max_age_days,
+                        timeout=timeout,
+                    ): h
+                    for h in hospitals
+                }
+
+                # Process results as they complete
+                completed = 0
+                for future in as_completed(future_to_hospital):
+                    completed += 1
+                    original_hospital = future_to_hospital[future]
+                    try:
+                        hospital, result, message = future.result()
+
+                        # Compact output for parallel mode
+                        status_char = message[0] if message else "?"
+                        hospital_name = (
+                            hospital.hospital[:30] + "..."
+                            if len(hospital.hospital) > 30
+                            else hospital.hospital
+                        )
+                        click.echo(
+                            f"[{completed}/{len(hospitals)}] {status_char} "
+                            f"{hospital.ccn} ({hospital_name})"
+                        )
+
+                        # Track result by state
+                        state_key = hospital.state.upper()
+                        if state_key not in results_by_state:
+                            results_by_state[state_key] = []
+                        results_by_state[state_key].append((hospital, result))
+
+                    except Exception as e:
+                        click.echo(
+                            f"[{completed}/{len(hospitals)}] ! "
+                            f"{original_hospital.ccn} Error: {e}"
+                        )
+                        result = ScrapeResult.failure(
+                            hospital_npi=original_hospital.hospital_npi,
+                            file_url=original_hospital.file_url,
+                            error=e,
+                            duration_seconds=0.0,
+                            ccn=original_hospital.ccn,
+                        )
+
+                        state_key = original_hospital.state.upper()
+                        if state_key not in results_by_state:
+                            results_by_state[state_key] = []
+                        results_by_state[state_key].append((original_hospital, result))
+
+                    stats.add_result(result)
 
     stats.end_time = datetime.now()
 
@@ -530,6 +578,26 @@ def main(
         for state_code, state_results in results_by_state.items():
             status_file = write_state_status(config, state_code, state_results)
             click.echo(f"  Wrote {status_file}")
+
+    # Price distribution for every CPT/HCPCS in this run
+    if not dry_run and not validate_only:
+        all_results = [
+            pair for state_results in results_by_state.values() for pair in state_results
+        ]
+        stats_path, stats_df = write_price_stats_for_run(
+            config,
+            all_results,
+            state_filter=state,
+            ccn_filter=ccn,
+        )
+        click.echo("\n" + "=" * 50)
+        click.echo(format_stats_preview(stats_df))
+        click.echo(f"Wrote {len(stats_df):,} product/price-type rows to {stats_path}")
+        logger.info(
+            "price_stats_written",
+            path=str(stats_path),
+            rows=len(stats_df),
+        )
 
     # Print summary
     click.echo("\n" + "=" * 50)
@@ -558,6 +626,7 @@ def main(
         skipped=stats.skipped,
         total_records=stats.total_records,
         duration_seconds=stats.total_duration_seconds,
+        from_existing=from_existing,
     )
 
     # Exit with error if any failures
